@@ -93,24 +93,27 @@
 
 /* Paper Templates background patterns */
 .paper-ruled {
-  background-image: linear-gradient(var(--paper-line-color) 1px, transparent 1px);
+  background-color: #FFFFFF;
+  background-image: linear-gradient(rgba(203, 213, 225, 0.65) 1px, transparent 1px);
   background-size: 100% 28px;
 }
 
 .paper-grid {
+  background-color: #FFFFFF;
   background-image: 
-    linear-gradient(var(--paper-grid-color) 1px, transparent 1px),
-    linear-gradient(90deg, var(--paper-grid-color) 1px, transparent 1px);
+    linear-gradient(rgba(203, 213, 225, 0.45) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(203, 213, 225, 0.45) 1px, transparent 1px);
   background-size: 24px 24px;
 }
 
 .paper-dotted {
-  background-image: radial-gradient(var(--paper-line-color) 1px, transparent 1px);
+  background-color: #FFFFFF;
+  background-image: radial-gradient(rgba(203, 213, 225, 0.65) 1px, transparent 1px);
   background-size: 20px 20px;
 }
 
 .paper-blank {
-  background-color: var(--bg-secondary);
+  background-color: #FFFFFF;
 }
 
 /* Canvas overlay sizing */
