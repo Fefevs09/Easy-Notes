@@ -1,0 +1,123 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --bg-primary: #F4F5F7;
+    --bg-secondary: #FFFFFF;
+    --bg-tertiary: #E5E7EB;
+    --border-color: #E2E8F0;
+    --text-primary: #1E293B;
+    --text-secondary: #64748B;
+    --accent: #FF5E5B;
+    --accent-hover: #E04E4B;
+    --mac-sidebar: #EAEBED;
+    --card-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05);
+    
+    /* Paper background templates */
+    --paper-line-color: rgba(226, 232, 240, 0.8);
+    --paper-grid-color: rgba(226, 232, 240, 0.5);
+  }
+
+  .dark {
+    --bg-primary: #121214;
+    --bg-secondary: #1E1E22;
+    --bg-tertiary: #2D2D34;
+    --border-color: #2F2F37;
+    --text-primary: #F1F5F9;
+    --text-secondary: #94A3B8;
+    --accent: #FF6B6B;
+    --accent-hover: #FF8787;
+    --mac-sidebar: #18181C;
+    --card-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.3), 0 4px 6px -4px rgb(0 0 0 / 0.3);
+    
+    /* Paper background templates in dark mode */
+    --paper-line-color: rgba(71, 85, 105, 0.4);
+    --paper-grid-color: rgba(71, 85, 105, 0.25);
+  }
+
+  body {
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    overflow: hidden;
+    margin: 0;
+    padding: 0;
+    height: 100vh;
+    width: 100vw;
+  }
+}
+
+/* Glassmorphism Styles */
+.glass-panel {
+  background: rgba(30, 30, 34, 0.7);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.light .glass-panel {
+  background: rgba(255, 255, 255, 0.75);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+/* Scrollbar customization */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--bg-tertiary);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-secondary);
+}
+
+/* Micro-animations and hover transitions */
+.hover-scale {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.hover-scale:hover {
+  transform: scale(1.03);
+}
+
+.hover-glow {
+  transition: all 0.3s ease;
+}
+.hover-glow:hover {
+  box-shadow: 0 0 15px rgba(255, 107, 107, 0.45);
+}
+
+/* Paper Templates background patterns */
+.paper-ruled {
+  background-image: linear-gradient(var(--paper-line-color) 1px, transparent 1px);
+  background-size: 100% 28px;
+}
+
+.paper-grid {
+  background-image: 
+    linear-gradient(var(--paper-grid-color) 1px, transparent 1px),
+    linear-gradient(90deg, var(--paper-grid-color) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+.paper-dotted {
+  background-image: radial-gradient(var(--paper-line-color) 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+
+.paper-blank {
+  background-color: var(--bg-secondary);
+}
+
+/* Canvas overlay sizing */
+.canvas-container-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
