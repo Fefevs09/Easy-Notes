@@ -5,7 +5,6 @@ import {
   Highlighter,
   Eraser,
   Square,
-  Type,
   ChevronDown,
   Activity
 } from 'lucide-react'
@@ -312,19 +311,6 @@ export default function CanvasToolbar(): React.JSX.Element {
           {activeTool === 'shape' && <ChevronDown size={12} />}
         </button>
 
-        {/* Rich Text Editor Tool Button */}
-        <button
-          onClick={() => {
-            setActiveTool('text')
-            setActiveMenu(null)
-          }}
-          className={`p-2.5 rounded-full transition-all hover:scale-110 ${
-            activeTool === 'text' ? 'bg-red-400 text-white shadow-md' : 'text-slate-400 hover:text-slate-100'
-          }`}
-          title="Editor de Texto"
-        >
-          <Type size={18} />
-        </button>
       </div>
     </div>
   )
