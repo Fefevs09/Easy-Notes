@@ -14,6 +14,7 @@ interface CanvasState {
   isAutoShapeEnabled: boolean
   selectedShape: ShapeType
   eraserMode: EraserMode
+  zoom: number
 
   setActiveTool: (tool: ToolType) => void
   setColor: (color: string) => void
@@ -23,6 +24,7 @@ interface CanvasState {
   setAutoShapeEnabled: (enabled: boolean) => void
   setSelectedShape: (shape: ShapeType) => void
   setEraserMode: (mode: EraserMode) => void
+  setZoom: (zoom: number) => void
 }
 
 export const useCanvasStore = create<CanvasState>((set) => ({
@@ -34,6 +36,7 @@ export const useCanvasStore = create<CanvasState>((set) => ({
   isAutoShapeEnabled: false,
   selectedShape: 'line',
   eraserMode: 'stroke',
+  zoom: 1.0,
 
   setActiveTool: (tool) => set({ activeTool: tool }),
   setColor: (color) => set({ color }),
@@ -42,5 +45,6 @@ export const useCanvasStore = create<CanvasState>((set) => ({
   setPressureCurve: (curve) => set({ pressureCurve: curve }),
   setAutoShapeEnabled: (enabled) => set({ isAutoShapeEnabled: enabled }),
   setSelectedShape: (shape) => set({ selectedShape: shape }),
-  setEraserMode: (mode) => set({ eraserMode: mode })
+  setEraserMode: (mode) => set({ eraserMode: mode }),
+  setZoom: (zoom) => set({ zoom: Math.max(0.5, Math.min(3.0, zoom)) })
 }))

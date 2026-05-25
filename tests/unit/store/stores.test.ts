@@ -12,7 +12,8 @@ describe('CanvasStore State Management', () => {
       strokeWidth: 5,
       opacity: 1,
       pressureCurve: 'linear',
-      isAutoShapeEnabled: false
+      isAutoShapeEnabled: false,
+      zoom: 1.0
     })
   })
 
@@ -21,6 +22,7 @@ describe('CanvasStore State Management', () => {
     expect(state.activeTool).toBe('pen')
     expect(state.color).toBe('#000000')
     expect(state.strokeWidth).toBe(5)
+    expect(state.zoom).toBe(1.0)
   })
 
   it('should allow tool selection and property updates', () => {
@@ -41,6 +43,17 @@ describe('CanvasStore State Management', () => {
   it('should toggle auto shape recognition', () => {
     useCanvasStore.getState().setAutoShapeEnabled(true)
     expect(useCanvasStore.getState().isAutoShapeEnabled).toBe(true)
+  })
+
+  it('should update and constrain zoom levels', () => {
+    useCanvasStore.getState().setZoom(1.5)
+    expect(useCanvasStore.getState().zoom).toBe(1.5)
+
+    useCanvasStore.getState().setZoom(4.0) // should cap at 3.0
+    expect(useCanvasStore.getState().zoom).toBe(3.0)
+
+    useCanvasStore.getState().setZoom(0.2) // should floor at 0.5
+    expect(useCanvasStore.getState().zoom).toBe(0.5)
   })
 })
 

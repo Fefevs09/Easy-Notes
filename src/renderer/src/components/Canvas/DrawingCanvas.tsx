@@ -3,6 +3,7 @@ import { useCanvasStore } from '../../store/canvas-store'
 import { detectShape } from '../../lib/tools/shape-tools'
 import { PointerHandler } from '../../lib/input/pointer-handler'
 import { WacomDetector } from '../../lib/input/wacom-detector'
+import { Minus, Plus } from 'lucide-react'
 
 interface Point {
   x: number
@@ -56,7 +57,9 @@ export default function DrawingCanvas({
     pressureCurve,
     isAutoShapeEnabled,
     selectedShape,
-    eraserMode
+    eraserMode,
+    zoom,
+    setZoom
   } = useCanvasStore()
 
   // Input handlers
@@ -431,18 +434,55 @@ export default function DrawingCanvas({
 
   return (
     <div
-      className={`relative w-full h-full shadow-inner overflow-hidden border border-slate-200/50 dark:border-zinc-800/50 rounded-2xl ${paperClass} transition-all duration-300`}
+      className={`relative w-full h-full shadow-inner overflow-auto border border-slate-200/50 dark:border-zinc-800/50 rounded-2xl ${paperClass} transition-all duration-300 flex items-start justify-start p-6`}
       style={{ touchAction: 'none' }}
     >
-      <canvas
-        ref={canvasRef}
-        width={1200}
-        height={900}
-        onPointerDown={handlePointerDown}
-        onPointerMove={handlePointerMove}
-        onPointerUp={handlePointerUp}
-        className="absolute top-0 left-0 cursor-crosshair w-full h-full block"
-      />
+      {/* Sized Wrapper to force natural DOM scrollbars based on zoom level */}
+      <div
+        className="relative shadow-xl border border-slate-200/40 dark:border-zinc-800/40 rounded-xl overflow-hidden flex-shrink-0 bg-white"
+        style={{
+          width: `${1200 * zoom}px`,
+          height: `${900 * zoom}px`,
+          transition: 'width 0.15s ease-out, height 0.15s ease-out'
+        }}
+      >
+        <canvas
+          ref={canvasRef}
+          width={1200}
+          height={900}
+          onPointerDown={handlePointerDown}
+          onPointerMove={handlePointerMove}
+          onPointerUp={handlePointerUp}
+          className="absolute top-0 left-0 cursor-crosshair w-full h-full block"
+        />
+      </div>
+
+      {/* Floating Zoom Control HUD widget at the bottom right corner of the canvas container */}
+      <div className="absolute bottom-4 right-4 flex items-center gap-2 glass-panel p-2 px-3 rounded-full shadow-2xl z-40 text-xs font-semibold text-slate-800 dark:text-slate-200">
+        <button
+          onClick={() => setZoom(zoom - 0.1)}
+          className="p-1 rounded-full hover:bg-white/20 dark:hover:bg-zinc-700/50 transition-colors text-slate-400 hover:text-slate-700 dark:hover:text-slate-100"
+          title="Diminuir Zoom"
+        >
+          <Minus size={14} />
+        </button>
+        <span className="min-w-[42px] text-center select-none">{Math.round(zoom * 100)}%</span>
+        <button
+          onClick={() => setZoom(zoom + 0.1)}
+          className="p-1 rounded-full hover:bg-white/20 dark:hover:bg-zinc-700/50 transition-colors text-slate-400 hover:text-slate-700 dark:hover:text-slate-100"
+          title="Aumentar Zoom"
+        >
+          <Plus size={14} />
+        </button>
+        <div className="w-[1px] h-4 bg-slate-300 dark:bg-zinc-700 mx-0.5" />
+        <button
+          onClick={() => setZoom(1.0)}
+          className="p-1 rounded-full hover:bg-white/20 dark:hover:bg-zinc-700/50 transition-colors text-slate-400 hover:text-slate-700 dark:hover:text-slate-100 text-xxs font-medium"
+          title="Ajustar Zoom para 100%"
+        >
+          100%
+        </button>
+      </div>
     </div>
   )
 }
