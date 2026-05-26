@@ -40,6 +40,8 @@ export default function DrawingCanvas({
   canvasRefCallback
 }: DrawingCanvasProps): React.JSX.Element {
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
+  const viewportRef = useRef<HTMLDivElement | null>(null)
+
   const [strokes, setStrokes] = useState<Stroke[]>([])
   const [shapes, setShapes] = useState<ShapeObj[]>([])
   const [undoStack, setUndoStack] = useState<{ strokes: Stroke[]; shapes: ShapeObj[] }[]>([])
@@ -52,6 +54,11 @@ export default function DrawingCanvas({
   // Infinite canvas dynamic size states
   const [canvasWidth, setCanvasWidth] = useState(1200)
   const [canvasHeight, setCanvasHeight] = useState(900)
+
+  // Spacebar pan navigation states
+  const [isSpacePressed, setIsSpacePressed] = useState(false)
+  const isPanning = useRef(false)
+  const panStart = useRef({ x: 0, y: 0, scrollLeft: 0, scrollTop: 0 })
 
   const {
     activeTool,
@@ -69,6 +76,49 @@ export default function DrawingCanvas({
   // Input handlers
   const pointerHandler = useRef(new PointerHandler())
   const wacomDetector = useRef(new WacomDetector())
+
+  // Spacebar panning key listeners
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.code === 'Space') {
+        e.preventDefault()
+        setIsSpacePressed(true)
+      }
+    }
+
+    const handleKeyUp = (e: KeyboardEvent) => {
+      if (e.code === 'Space') {
+        setIsSpacePressed(false)
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    window.addEventListener('keyup', handleKeyUp)
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown)
+      window.removeEventListener('keyup', handleKeyUp)
+    }
+  }, [])
+
+  // Touchpad trackpad pinch-to-zoom native event handler (non-passive to allow e.preventDefault())
+  useEffect(() => {
+    const viewport = viewportRef.current
+    if (!viewport) return
+
+    const handleWheel = (e: WheelEvent) => {
+      if (e.ctrlKey) {
+        e.preventDefault()
+        const scaleChange = -e.deltaY * 0.006 // smooth multiplier
+        const targetZoom = zoom + scaleChange
+        setZoom(targetZoom)
+      }
+    }
+
+    viewport.addEventListener('wheel', handleWheel, { passive: false })
+    return () => {
+      viewport.removeEventListener('wheel', handleWheel)
+    }
+  }, [zoom, setZoom])
 
   // Configure pressure curve dynamically
   useEffect(() => {
@@ -255,6 +305,22 @@ export default function DrawingCanvas({
   // POINTER EVENT HANDLERS
   const handlePointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
     e.preventDefault()
+
+    // If spacebar is pressed, perform panning/dragging instead of drawing
+    if (isSpacePressed) {
+      isPanning.current = true
+      const viewport = viewportRef.current
+      if (viewport) {
+        panStart.current = {
+          x: e.clientX,
+          y: e.clientY,
+          scrollLeft: viewport.scrollLeft,
+          scrollTop: viewport.scrollTop
+        }
+      }
+      return
+    }
+
     const canvas = canvasRef.current
     if (!canvas) return
     const rect = canvas.getBoundingClientRect()
@@ -284,6 +350,19 @@ export default function DrawingCanvas({
   }
 
   const handlePointerMove = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    // If we are currently panning/dragging the viewport
+    if (isPanning.current) {
+      e.preventDefault()
+      const viewport = viewportRef.current
+      if (viewport) {
+        const dx = e.clientX - panStart.current.x
+        const dy = e.clientY - panStart.current.y
+        viewport.scrollLeft = panStart.current.scrollLeft - dx
+        viewport.scrollTop = panStart.current.scrollTop - dy
+      }
+      return
+    }
+
     if (!isDrawing) return
     e.preventDefault()
     const canvas = canvasRef.current
@@ -334,6 +413,12 @@ export default function DrawingCanvas({
   }
 
   const handlePointerUp = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    // If we were panning/dragging the viewport
+    if (isPanning.current) {
+      isPanning.current = false
+      return
+    }
+
     if (!isDrawing) return
     e.preventDefault()
     setIsDrawing(false)
@@ -448,6 +533,7 @@ export default function DrawingCanvas({
 
   return (
     <div
+      ref={viewportRef}
       className="relative w-full h-full shadow-inner overflow-auto border border-slate-200/50 dark:border-zinc-800/50 rounded-2xl bg-slate-100 dark:bg-zinc-900/40 transition-all duration-300 flex items-start justify-start p-6"
       style={{ touchAction: 'none' }}
     >
@@ -469,7 +555,7 @@ export default function DrawingCanvas({
           onPointerDown={handlePointerDown}
           onPointerMove={handlePointerMove}
           onPointerUp={handlePointerUp}
-          className="absolute top-0 left-0 cursor-crosshair w-full h-full block"
+          className={`absolute top-0 left-0 w-full h-full block ${isSpacePressed ? 'cursor-grab active:cursor-grabbing z-40' : 'cursor-crosshair'}`}
         />
       </div>
 
