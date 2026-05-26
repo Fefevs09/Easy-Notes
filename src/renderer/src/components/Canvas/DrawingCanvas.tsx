@@ -434,15 +434,17 @@ export default function DrawingCanvas({
 
   return (
     <div
-      className={`relative w-full h-full shadow-inner overflow-auto border border-slate-200/50 dark:border-zinc-800/50 rounded-2xl ${paperClass} transition-all duration-300 flex items-start justify-start p-6`}
+      className="relative w-full h-full shadow-inner overflow-auto border border-slate-200/50 dark:border-zinc-800/50 rounded-2xl bg-slate-100 dark:bg-zinc-900/40 transition-all duration-300 flex items-start justify-start p-6"
       style={{ touchAction: 'none' }}
     >
       {/* Sized Wrapper to force natural DOM scrollbars based on zoom level */}
       <div
-        className="relative shadow-xl border border-slate-200/40 dark:border-zinc-800/40 rounded-xl overflow-hidden flex-shrink-0 bg-white"
+        className={`relative shadow-xl border border-slate-200/40 dark:border-zinc-800/40 rounded-xl overflow-hidden flex-shrink-0 bg-white ${paperClass}`}
         style={{
-          width: `${1200 * zoom}px`,
-          height: `${900 * zoom}px`,
+          width: zoom > 1 ? `${1200 * zoom}px` : '100%',
+          height: zoom > 1 ? `${900 * zoom}px` : '100%',
+          minWidth: '100%',
+          minHeight: '100%',
           transition: 'width 0.15s ease-out, height 0.15s ease-out'
         }}
       >
