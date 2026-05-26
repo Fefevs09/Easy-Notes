@@ -49,6 +49,10 @@ export default function DrawingCanvas({
   const [shapeStart, setShapeStart] = useState<{ x: number; y: number } | null>(null)
   const [shapeCurrent, setShapeCurrent] = useState<{ x: number; y: number } | null>(null)
 
+  // Infinite canvas dynamic size states
+  const [canvasWidth, setCanvasWidth] = useState(1200)
+  const [canvasHeight, setCanvasHeight] = useState(900)
+
   const {
     activeTool,
     color,
@@ -77,6 +81,8 @@ export default function DrawingCanvas({
     setShapes([])
     setUndoStack([])
     setRedoStack([])
+    setCanvasWidth(1200)
+    setCanvasHeight(900)
   }, [noteId])
 
   // Provide Undo/Redo handlers to parent Toolbar
@@ -140,7 +146,7 @@ export default function DrawingCanvas({
       drawShapeOnContext(ctx, activeShapeObj)
       ctx.restore()
     }
-  }, [strokes, shapes, isDrawing, currentStroke, shapeStart, shapeCurrent, template])
+  }, [strokes, shapes, isDrawing, currentStroke, shapeStart, shapeCurrent, template, canvasWidth, canvasHeight])
 
   const drawStrokeOnContext = (ctx: CanvasRenderingContext2D, stroke: Stroke) => {
     if (stroke.points.length < 2) return
@@ -287,6 +293,14 @@ export default function DrawingCanvas({
     const scaleY = rect.height > 0 ? (canvas.height / rect.height) : 1
     const x = (e.clientX - rect.left) * scaleX
     const y = (e.clientY - rect.top) * scaleY
+
+    // Auto-expand canvas size dynamically if drawing near bottom or right boundaries (within 100px)
+    if (x > canvasWidth - 100) {
+      setCanvasWidth((prev) => prev + 1000)
+    }
+    if (y > canvasHeight - 100) {
+      setCanvasHeight((prev) => prev + 1000)
+    }
 
     const rawPressure = e.pressure !== undefined && e.pressure > 0 ? e.pressure : 0.5
     const calibratedPressure = pointerHandler.current.calibratePressure(rawPressure)
