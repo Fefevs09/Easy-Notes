@@ -47,8 +47,7 @@ export default function CanvasToolbar(): React.JSX.Element {
     <div className="relative flex flex-col items-center">
       {/* Floating Submenus Panels */}
       {activeMenu && (
-        <div className="absolute bottom-16 mb-2 glass-panel p-4 rounded-2xl shadow-xl w-64 text-xs space-y-3 z-50 text-slate-800 dark:text-slate-200">
-          
+        <div className="absolute bottom-16 mb-2 glass-panel p-4 rounded-2xl shadow-xl w-64 text-xs space-y-4 z-50 text-slate-800 dark:text-slate-200">
           {/* 1. PEN CONFIGURATION */}
           {activeMenu === 'pen' && (
             <>
@@ -56,11 +55,11 @@ export default function CanvasToolbar(): React.JSX.Element {
                 <span>Caneta Caligráfica</span>
                 <span className="text-xxs px-1.5 py-0.5 bg-red-400 text-white rounded">Wacom Active</span>
               </div>
-              
+
               {/* Color Palette */}
-              <div className="space-y-1.5">
+              <div className="flex flex-col gap-3">
                 <span className="text-slate-400">Paleta de Cores</span>
-                <div className="flex gap-2.5 flex-wrap">
+                <div className="flex gap-3 flex-wrap">
                   {PEN_COLORS.map((c) => (
                     <button
                       key={c}
@@ -118,10 +117,12 @@ export default function CanvasToolbar(): React.JSX.Element {
           {/* 2. HIGHLIGHTER CONFIGURATION */}
           {activeMenu === 'highlighter' && (
             <>
-              <div className="font-semibold border-b border-white/10 pb-1.5">Marcador Semitransparente</div>
+              <div className="font-semibold border-b border-white/10 pb-1.5">
+                Marcador Semitransparente
+              </div>
 
               {/* Color Palette */}
-              <div className="space-y-1.5">
+              <div className="flex flex-col gap-3">
                 <span className="text-slate-400">Paleta Neon</span>
                 <div className="flex gap-2.5">
                   {HIGH_COLORS.map((c) => (
@@ -262,7 +263,7 @@ export default function CanvasToolbar(): React.JSX.Element {
 
       {/* Primary Floating Toolbar Bar */}
       <div className="flex items-center gap-1.5 glass-panel p-2 px-3 rounded-full shadow-2xl z-50">
-        
+
         {/* Pen Button */}
         <button
           onClick={() => handleToolClick('pen', 'pen')}
