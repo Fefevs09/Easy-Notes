@@ -53,7 +53,6 @@ export default function CanvasToolbar(): React.JSX.Element {
             <>
               <div className="font-semibold border-b border-white/10 pb-1.5 flex justify-between items-center">
                 <span>Caneta Caligráfica</span>
-                <span className="text-xxs px-1.5 py-0.5 bg-red-400 text-white rounded">Wacom Active</span>
               </div>
 
               {/* Color Palette */}

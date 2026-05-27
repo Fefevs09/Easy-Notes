@@ -44,21 +44,11 @@ export default function App(): React.JSX.Element {
     }
   }, [activeNoteId])
 
-
   return (
     <div className="flex w-screen h-screen overflow-hidden bg-slate-50 dark:bg-zinc-950 transition-colors duration-300">
-      
       {/* 1. SIDEBAR COLUMN: Folders sidebar */}
       {isSidebarOpen && (
         <div className="w-52 h-full bg-slate-100 dark:bg-zinc-900/60 border-r border-slate-200 dark:border-zinc-800/40 p-2 flex flex-col z-20">
-          {/* Mac Header */}
-          <div className="flex items-center gap-2 px-3 py-4 select-none">
-            <div className="w-3 h-3 rounded-full bg-red-400" />
-            <div className="w-3 h-3 rounded-full bg-yellow-400" />
-            <div className="w-3 h-3 rounded-full bg-green-400" />
-            <span className="text-xs font-bold tracking-wider ml-1 text-slate-500 dark:text-slate-400">EASY NOTES</span>
-          </div>
-
           <div className="flex-1 mt-2">
             <FolderTree />
           </div>
@@ -81,7 +71,6 @@ export default function App(): React.JSX.Element {
 
       {/* 3. RIGHT COLUMN: Main active workspace area */}
       <div className="flex-1 h-full flex flex-col relative overflow-hidden bg-slate-50 dark:bg-zinc-950">
-        
         {/* Header toolbar */}
         <MainToolbar
           activeNote={activeNote}
@@ -120,7 +109,6 @@ export default function App(): React.JSX.Element {
             </div>
           )}
         </div>
-
       </div>
     </div>
   )

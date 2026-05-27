@@ -65,7 +65,6 @@ export default function MainToolbar({
 
   return (
     <div className="h-14 border-b border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 flex items-center justify-between px-6 select-none z-30">
-      
       {/* 1. LEFT SIDE: Title & Favorite Toggle */}
       <div className="flex items-center gap-3 max-w-sm">
         {isEditingTitle ? (
@@ -154,7 +153,6 @@ export default function MainToolbar({
 
       {/* 3. RIGHT SIDE: Undo/Redo & Actions & Theme */}
       <div className="flex items-center gap-4 text-slate-400">
-        
         {/* Undo / Redo */}
         <div className="flex items-center border-r border-slate-200 dark:border-zinc-800 pr-4">
           <button
@@ -212,7 +210,6 @@ export default function MainToolbar({
             {theme === 'dark' ? <Sun size={15} /> : <Moon size={15} />}
           </button>
         </div>
-
       </div>
     </div>
   )
