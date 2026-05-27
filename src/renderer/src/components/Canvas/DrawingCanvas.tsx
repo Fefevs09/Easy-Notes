@@ -338,6 +338,9 @@ export default function DrawingCanvas({
   }
 
   const handleClear = () => {
+    const confirmClear = window.confirm('Tem certeza de que deseja apagar todos os desenhos e formas desta nota? Esta ação pode ser desfeita.')
+    if (!confirmClear) return
+
     saveHistoryState()
     setStrokes([])
     setShapes([])
