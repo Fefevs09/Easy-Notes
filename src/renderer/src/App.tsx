@@ -6,7 +6,6 @@ import FolderTree from './components/Sidebar/FolderTree'
 import NotesList from './components/Sidebar/NotesList'
 import MainToolbar from './components/Toolbar/MainToolbar'
 import DrawingCanvas from './components/Canvas/DrawingCanvas'
-import CanvasToolbar from './components/Canvas/CanvasToolbar'
 import { Sidebar, Sparkles } from 'lucide-react'
 
 export default function App(): React.JSX.Element {
@@ -90,11 +89,6 @@ export default function App(): React.JSX.Element {
                 template={pageTemplate}
                 canvasRefCallback={setCanvasHandlers}
               />
-
-              {/* Floating drawing tools panel */}
-              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 w-auto z-50">
-                <CanvasToolbar />
-              </div>
             </div>
           ) : (
             /* EMPTY STATE PANELS */

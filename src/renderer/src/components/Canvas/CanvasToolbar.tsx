@@ -47,7 +47,7 @@ export default function CanvasToolbar(): React.JSX.Element {
     <div className="relative flex flex-col items-center">
       {/* Floating Submenus Panels */}
       {activeMenu && (
-        <div className="absolute bottom-16 mb-2 glass-panel p-4 rounded-2xl shadow-xl w-64 text-xs space-y-4 z-50 text-slate-800 dark:text-slate-200">
+        <div className="absolute top-12 mt-1 glass-panel p-4 rounded-2xl shadow-xl w-64 text-xs space-y-4 z-50 text-slate-800 dark:text-slate-200">
           {/* 1. PEN CONFIGURATION */}
           {activeMenu === 'pen' && (
             <>
@@ -261,7 +261,7 @@ export default function CanvasToolbar(): React.JSX.Element {
       )}
 
       {/* Primary Floating Toolbar Bar */}
-      <div className="flex items-center gap-1.5 glass-panel p-2 px-3 rounded-full shadow-2xl z-50">
+      <div className="flex items-center gap-1 z-50">
 
         {/* Pen Button */}
         <button

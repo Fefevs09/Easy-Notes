@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { useNotesStore } from '../../store/notes-store'
 import { useUiStore } from '../../store/ui-store'
+import CanvasToolbar from '../Canvas/CanvasToolbar'
 import {
   Undo,
   Redo,
@@ -96,59 +97,68 @@ export default function MainToolbar({
         </button>
       </div>
 
-      {/* 2. CENTER SIDE: Page Template Selector */}
-      <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-zinc-800/80 p-0.5 rounded-lg text-slate-600 dark:text-slate-300">
-        <button
-          onClick={() => setPageTemplate('blank')}
-          className={`p-1.5 rounded-md flex items-center gap-1 text-xs font-medium transition-all ${
-            pageTemplate === 'blank'
-              ? 'bg-white dark:bg-zinc-700 text-slate-800 dark:text-white shadow-sm'
-              : 'hover:bg-white/50 dark:hover:bg-zinc-700/30'
-          }`}
-          title="Papel Liso"
-        >
-          <FileText size={14} />
-          <span className="hidden lg:inline">Liso</span>
-        </button>
+      {/* 2. CENTER AREA: Page Templates (Left) & Drawing Tools (Right) */}
+      <div className="flex items-center gap-5">
+        {/* Page Template Selector */}
+        <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-zinc-800/80 p-0.5 rounded-lg text-slate-600 dark:text-slate-300">
+          <button
+            onClick={() => setPageTemplate('blank')}
+            className={`p-1.5 rounded-md flex items-center gap-1 text-xs font-medium transition-all ${
+              pageTemplate === 'blank'
+                ? 'bg-white dark:bg-zinc-700 text-slate-800 dark:text-white shadow-sm'
+                : 'hover:bg-white/50 dark:hover:bg-zinc-700/30'
+            }`}
+            title="Papel Liso"
+          >
+            <FileText size={14} />
+            <span className="hidden lg:inline">Liso</span>
+          </button>
 
-        <button
-          onClick={() => setPageTemplate('ruled')}
-          className={`p-1.5 rounded-md flex items-center gap-1 text-xs font-medium transition-all ${
-            pageTemplate === 'ruled'
-              ? 'bg-white dark:bg-zinc-700 text-slate-800 dark:text-white shadow-sm'
-              : 'hover:bg-white/50 dark:hover:bg-zinc-700/30'
-          }`}
-          title="Papel Pautado"
-        >
-          <Layers3 size={14} />
-          <span className="hidden lg:inline">Pautado</span>
-        </button>
+          <button
+            onClick={() => setPageTemplate('ruled')}
+            className={`p-1.5 rounded-md flex items-center gap-1 text-xs font-medium transition-all ${
+              pageTemplate === 'ruled'
+                ? 'bg-white dark:bg-zinc-700 text-slate-800 dark:text-white shadow-sm'
+                : 'hover:bg-white/50 dark:hover:bg-zinc-700/30'
+            }`}
+            title="Papel Pautado"
+          >
+            <Layers3 size={14} />
+            <span className="hidden lg:inline">Pautado</span>
+          </button>
 
-        <button
-          onClick={() => setPageTemplate('grid')}
-          className={`p-1.5 rounded-md flex items-center gap-1 text-xs font-medium transition-all ${
-            pageTemplate === 'grid'
-              ? 'bg-white dark:bg-zinc-700 text-slate-800 dark:text-white shadow-sm'
-              : 'hover:bg-white/50 dark:hover:bg-zinc-700/30'
-          }`}
-          title="Papel Quadriculado"
-        >
-          <Grid size={14} />
-          <span className="hidden lg:inline">Grade</span>
-        </button>
+          <button
+            onClick={() => setPageTemplate('grid')}
+            className={`p-1.5 rounded-md flex items-center gap-1 text-xs font-medium transition-all ${
+              pageTemplate === 'grid'
+                ? 'bg-white dark:bg-zinc-700 text-slate-800 dark:text-white shadow-sm'
+                : 'hover:bg-white/50 dark:hover:bg-zinc-700/30'
+            }`}
+            title="Papel Quadriculado"
+          >
+            <Grid size={14} />
+            <span className="hidden lg:inline">Grade</span>
+          </button>
 
-        <button
-          onClick={() => setPageTemplate('dotted')}
-          className={`p-1.5 rounded-md flex items-center gap-1 text-xs font-medium transition-all ${
-            pageTemplate === 'dotted'
-              ? 'bg-white dark:bg-zinc-700 text-slate-800 dark:text-white shadow-sm'
-              : 'hover:bg-white/50 dark:hover:bg-zinc-700/30'
-          }`}
-          title="Papel Pontilhado"
-        >
-          <SquareDot size={14} />
-          <span className="hidden lg:inline">Pontos</span>
-        </button>
+          <button
+            onClick={() => setPageTemplate('dotted')}
+            className={`p-1.5 rounded-md flex items-center gap-1 text-xs font-medium transition-all ${
+              pageTemplate === 'dotted'
+                ? 'bg-white dark:bg-zinc-700 text-slate-800 dark:text-white shadow-sm'
+                : 'hover:bg-white/50 dark:hover:bg-zinc-700/30'
+            }`}
+            title="Papel Pontilhado"
+          >
+            <SquareDot size={14} />
+            <span className="hidden lg:inline">Pontos</span>
+          </button>
+        </div>
+
+        {/* Elegant Vertical Divider */}
+        <div className="w-[1px] h-6 bg-slate-200 dark:bg-zinc-800/80" />
+
+        {/* Drawing Tools (CanvasToolbar) */}
+        <CanvasToolbar />
       </div>
 
       {/* 3. RIGHT SIDE: Undo/Redo & Actions & Theme */}
