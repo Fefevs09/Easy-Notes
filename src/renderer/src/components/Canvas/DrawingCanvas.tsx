@@ -531,6 +531,16 @@ export default function DrawingCanvas({
   else if (template === 'grid') paperClass = 'paper-grid'
   else if (template === 'dotted') paperClass = 'paper-dotted'
 
+  // Calculate dynamic background size based on zoom level to ensure patterns scale proportionally
+  let dynamicBackgroundSize: string | undefined = undefined
+  if (template === 'ruled') {
+    dynamicBackgroundSize = `100% ${28 * zoom}px`
+  } else if (template === 'grid') {
+    dynamicBackgroundSize = `${24 * zoom}px ${24 * zoom}px`
+  } else if (template === 'dotted') {
+    dynamicBackgroundSize = `${20 * zoom}px ${20 * zoom}px`
+  }
+
   return (
     <div
       ref={viewportRef}
@@ -545,7 +555,8 @@ export default function DrawingCanvas({
           height: zoom > 1 ? `${900 * zoom}px` : '100%',
           minWidth: '100%',
           minHeight: '100%',
-          transition: 'width 0.15s ease-out, height 0.15s ease-out'
+          backgroundSize: dynamicBackgroundSize,
+          transition: 'width 0.15s ease-out, height 0.15s ease-out, background-size 0.15s ease-out'
         }}
       >
         <canvas
