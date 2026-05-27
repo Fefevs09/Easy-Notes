@@ -100,6 +100,28 @@ export default function DrawingCanvas({
     }
   }, [])
 
+  // Set initial canvas size to fill the viewport (minus padding) or at least 1200x900
+  useEffect(() => {
+    const updateSize = () => {
+      const viewport = viewportRef.current
+      if (viewport) {
+        // padding: p-6 is 24px on each side = 48px total.
+        const width = Math.max(1200, viewport.clientWidth - 48)
+        const height = Math.max(900, viewport.clientHeight - 48)
+        setCanvasWidth((prev) => Math.max(prev, width))
+        setCanvasHeight((prev) => Math.max(prev, height))
+      }
+    }
+
+    // Run after component mounts and when noteId changes
+    const handle = requestAnimationFrame(updateSize)
+    window.addEventListener('resize', updateSize)
+    return () => {
+      cancelAnimationFrame(handle)
+      window.removeEventListener('resize', updateSize)
+    }
+  }, [noteId])
+
   // Touchpad trackpad pinch-to-zoom native event handler (non-passive to allow e.preventDefault())
   useEffect(() => {
     const viewport = viewportRef.current
@@ -557,18 +579,16 @@ export default function DrawingCanvas({
       <div
         className={`relative shadow-xl border border-slate-200/40 dark:border-zinc-800/40 rounded-xl overflow-hidden flex-shrink-0 bg-white ${paperClass}`}
         style={{
-          width: zoom > 1 ? `${1200 * zoom}px` : '100%',
-          height: zoom > 1 ? `${900 * zoom}px` : '100%',
-          minWidth: '100%',
-          minHeight: '100%',
+          width: `${canvasWidth * zoom}px`,
+          height: `${canvasHeight * zoom}px`,
           backgroundSize: dynamicBackgroundSize,
-          transition: 'width 0.15s ease-out, height 0.15s ease-out, background-size 0.15s ease-out'
+          transition: 'background-size 0.15s ease-out'
         }}
       >
         <canvas
           ref={canvasRef}
-          width={1200}
-          height={900}
+          width={canvasWidth * zoom}
+          height={canvasHeight * zoom}
           onPointerDown={handlePointerDown}
           onPointerMove={handlePointerMove}
           onPointerUp={handlePointerUp}
