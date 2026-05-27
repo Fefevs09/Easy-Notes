@@ -122,7 +122,7 @@ export default function DrawingCanvas({
     }
   }, [noteId])
 
-  // Touchpad trackpad pinch-to-zoom native event handler (non-passive to allow e.preventDefault())
+  // Touchpad trackpad pinch-to-zoom and smooth horizontal/vertical wheel scroll handler
   useEffect(() => {
     const viewport = viewportRef.current
     if (!viewport) return
@@ -133,6 +133,13 @@ export default function DrawingCanvas({
         const scaleChange = -e.deltaY * 0.006 // smooth multiplier
         const targetZoom = zoom + scaleChange
         setZoom(targetZoom)
+      } else {
+        // Handle horizontal scrolling (via trackpad deltaX swipe or Shift + Vertical Scroll Wheel)
+        if (Math.abs(e.deltaX) > Math.abs(e.deltaY) || e.shiftKey) {
+          e.preventDefault()
+          const scrollAmount = e.shiftKey ? e.deltaY : e.deltaX
+          viewport.scrollLeft += scrollAmount
+        }
       }
     }
 
