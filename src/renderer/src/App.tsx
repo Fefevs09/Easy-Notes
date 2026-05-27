@@ -103,7 +103,7 @@ export default function App(): React.JSX.Element {
               />
 
               {/* Floating drawing tools panel */}
-              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 w-auto">
+              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 w-auto z-50">
                 <CanvasToolbar />
               </div>
             </div>
