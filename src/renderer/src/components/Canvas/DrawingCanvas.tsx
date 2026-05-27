@@ -122,7 +122,7 @@ export default function DrawingCanvas({
     }
   }, [noteId])
 
-  // Touchpad trackpad pinch-to-zoom and smooth horizontal/vertical wheel scroll handler
+  // Touchpad trackpad pinch-to-zoom and dynamic infinite scroll expansion handler
   useEffect(() => {
     const viewport = viewportRef.current
     if (!viewport) return
@@ -134,11 +134,18 @@ export default function DrawingCanvas({
         const targetZoom = zoom + scaleChange
         setZoom(targetZoom)
       } else {
-        // Handle horizontal scrolling (via trackpad deltaX swipe or Shift + Vertical Scroll Wheel)
-        if (Math.abs(e.deltaX) > Math.abs(e.deltaY) || e.shiftKey) {
-          e.preventDefault()
-          const scrollAmount = e.shiftKey ? e.deltaY : e.deltaX
-          viewport.scrollLeft += scrollAmount
+        // Auto-expand canvas size dynamically when scrolling near the right or bottom edges
+        if (e.deltaX > 0) {
+          const isNearRightEdge = viewport.scrollLeft + viewport.clientWidth >= (canvasWidth * zoom) - 150
+          if (isNearRightEdge) {
+            setCanvasWidth((prev) => prev + 500)
+          }
+        }
+        if (e.deltaY > 0) {
+          const isNearBottomEdge = viewport.scrollTop + viewport.clientHeight >= (canvasHeight * zoom) - 150
+          if (isNearBottomEdge) {
+            setCanvasHeight((prev) => prev + 500)
+          }
         }
       }
     }
@@ -147,7 +154,7 @@ export default function DrawingCanvas({
     return () => {
       viewport.removeEventListener('wheel', handleWheel)
     }
-  }, [zoom, setZoom])
+  }, [zoom, setZoom, canvasWidth, canvasHeight])
 
   // Configure pressure curve dynamically
   useEffect(() => {
