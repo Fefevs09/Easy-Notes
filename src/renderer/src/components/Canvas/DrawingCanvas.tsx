@@ -156,7 +156,10 @@ export default function DrawingCanvas({
     // Clear canvas
     ctx.clearRect(0, 0, canvas.width, canvas.height)
 
-    // Render Ruled/Grid lines internally if template is pautado/grade (as fallbacks)
+    // Save context and apply dynamic zoom scaling for razor-sharp vector rendering
+    ctx.save()
+    ctx.scale(zoom, zoom)
+
     // Draw existing strokes
     for (const stroke of strokes) {
       drawStrokeOnContext(ctx, stroke)
@@ -196,7 +199,9 @@ export default function DrawingCanvas({
       drawShapeOnContext(ctx, activeShapeObj)
       ctx.restore()
     }
-  }, [strokes, shapes, isDrawing, currentStroke, shapeStart, shapeCurrent, template, canvasWidth, canvasHeight])
+
+    ctx.restore()
+  }, [strokes, shapes, isDrawing, currentStroke, shapeStart, shapeCurrent, template, canvasWidth, canvasHeight, zoom])
 
   const drawStrokeOnContext = (ctx: CanvasRenderingContext2D, stroke: Stroke) => {
     if (stroke.points.length < 2) return
@@ -324,8 +329,8 @@ export default function DrawingCanvas({
     const canvas = canvasRef.current
     if (!canvas) return
     const rect = canvas.getBoundingClientRect()
-    const scaleX = rect.width > 0 ? (canvas.width / rect.width) : 1
-    const scaleY = rect.height > 0 ? (canvas.height / rect.height) : 1
+    const scaleX = rect.width > 0 ? (canvasWidth / rect.width) : 1
+    const scaleY = rect.height > 0 ? (canvasHeight / rect.height) : 1
     const x = (e.clientX - rect.left) * scaleX
     const y = (e.clientY - rect.top) * scaleY
 
@@ -368,8 +373,8 @@ export default function DrawingCanvas({
     const canvas = canvasRef.current
     if (!canvas) return
     const rect = canvas.getBoundingClientRect()
-    const scaleX = rect.width > 0 ? (canvas.width / rect.width) : 1
-    const scaleY = rect.height > 0 ? (canvas.height / rect.height) : 1
+    const scaleX = rect.width > 0 ? (canvasWidth / rect.width) : 1
+    const scaleY = rect.height > 0 ? (canvasHeight / rect.height) : 1
     const x = (e.clientX - rect.left) * scaleX
     const y = (e.clientY - rect.top) * scaleY
 
@@ -392,6 +397,7 @@ export default function DrawingCanvas({
       const ctx = canvas.getContext('2d')
       if (ctx) {
         ctx.save()
+        ctx.scale(zoom, zoom)
         ctx.lineCap = 'round'
         ctx.lineJoin = 'round'
         ctx.globalAlpha = activeTool === 'highlighter' ? opacity : 1
