@@ -95,7 +95,7 @@ export default function App(): React.JSX.Element {
         {/* Workspace Panes container */}
         <div className="flex-1 w-full h-full p-6 flex gap-6 overflow-hidden select-none">
           {activeNote ? (
-            <div className="flex-1 h-full relative transition-all duration-300">
+            <div className="flex-1 h-full relative">
               <DrawingCanvas
                 noteId={activeNote.id}
                 template={pageTemplate}

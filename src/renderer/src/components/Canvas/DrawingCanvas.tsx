@@ -584,30 +584,33 @@ export default function DrawingCanvas({
   }
 
   return (
-    <div
-      ref={viewportRef}
-      className="relative w-full h-full shadow-inner overflow-auto border border-slate-200/50 dark:border-zinc-800/50 rounded-2xl bg-slate-100 dark:bg-zinc-900/40 transition-all duration-300 flex items-start justify-start p-6"
-      style={{ touchAction: 'none' }}
-    >
-      {/* Sized Wrapper to force natural DOM scrollbars based on zoom level */}
+    <div className="relative w-full h-full flex-shrink-0">
+      {/* Scrollable Viewport Container */}
       <div
-        className={`relative shadow-xl border border-slate-200/40 dark:border-zinc-800/40 rounded-xl overflow-hidden flex-shrink-0 bg-white ${paperClass}`}
-        style={{
-          width: `${canvasWidth * zoom}px`,
-          height: `${canvasHeight * zoom}px`,
-          backgroundSize: dynamicBackgroundSize,
-          transition: 'background-size 0.15s ease-out'
-        }}
+        ref={viewportRef}
+        className="w-full h-full shadow-inner overflow-auto border border-slate-200/50 dark:border-zinc-800/50 rounded-2xl bg-slate-100 dark:bg-zinc-900/40 flex items-start justify-start p-6"
+        style={{ touchAction: 'none' }}
       >
-        <canvas
-          ref={canvasRef}
-          width={canvasWidth * zoom}
-          height={canvasHeight * zoom}
-          onPointerDown={handlePointerDown}
-          onPointerMove={handlePointerMove}
-          onPointerUp={handlePointerUp}
-          className={`absolute top-0 left-0 w-full h-full block ${isSpacePressed ? 'cursor-grab active:cursor-grabbing z-40' : 'cursor-crosshair'}`}
-        />
+        {/* Sized Wrapper to force natural DOM scrollbars based on zoom level */}
+        <div
+          className={`relative shadow-xl border border-slate-200/40 dark:border-zinc-800/40 rounded-xl overflow-hidden flex-shrink-0 bg-white ${paperClass}`}
+          style={{
+            width: `${canvasWidth * zoom}px`,
+            height: `${canvasHeight * zoom}px`,
+            backgroundSize: dynamicBackgroundSize,
+            transition: 'background-size 0.15s ease-out'
+          }}
+        >
+          <canvas
+            ref={canvasRef}
+            width={canvasWidth * zoom}
+            height={canvasHeight * zoom}
+            onPointerDown={handlePointerDown}
+            onPointerMove={handlePointerMove}
+            onPointerUp={handlePointerUp}
+            className={`absolute top-0 left-0 w-full h-full block ${isSpacePressed ? 'cursor-grab active:cursor-grabbing z-40' : 'cursor-crosshair'}`}
+          />
+        </div>
       </div>
 
       {/* Floating Zoom Control HUD widget at the bottom right corner of the canvas container */}
