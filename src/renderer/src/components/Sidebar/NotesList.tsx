@@ -4,7 +4,15 @@ import { useUiStore } from '../../store/ui-store'
 import { Search, Plus, Star, Calendar } from 'lucide-react'
 
 export default function NotesList(): React.JSX.Element {
-  const { notes, activeNoteId, searchQuery, setActiveNoteId, setSearchQuery, addNote, toggleFavorite } = useNotesStore()
+  const {
+    notes,
+    activeNoteId,
+    searchQuery,
+    setActiveNoteId,
+    setSearchQuery,
+    addNote,
+    toggleFavorite
+  } = useNotesStore()
   const { activeFolderId } = useUiStore()
 
   // Filter notes based on active folder & search query
@@ -19,7 +27,7 @@ export default function NotesList(): React.JSX.Element {
     // 2. Search match
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase()
-      return note.title.toLowerCase().includes(q) || note.content.toLowerCase().includes(q)
+      return note.title.toLowerCase().includes(q)
     }
 
     return true
@@ -42,17 +50,9 @@ export default function NotesList(): React.JSX.Element {
   }
 
   // Parse note content to show a beautiful plaintext preview
-  const getNotePreview = (content: string) => {
-    if (!content) return 'Nenhum conteúdo de texto...'
-    if (content.startsWith('[')) {
-      try {
-        const parsed = JSON.parse(content)
-        if (Array.isArray(parsed)) {
-          return parsed.map((b) => b.text).join(' ').trim() || 'Nenhum conteúdo de texto...'
-        }
-      } catch (e) {}
-    }
-    return content
+  const getNotePreview = (note: any) => {
+    const pagesCount = note.pages?.length || 0
+    return `${pagesCount} ${pagesCount === 1 ? 'página' : 'páginas'}`
   }
 
   return (
@@ -103,8 +103,8 @@ export default function NotesList(): React.JSX.Element {
                 </div>
 
                 {/* Note preview content snippet */}
-                <p className="text-xs text-slate-400 mt-1 truncate">
-                  {getNotePreview(note.content)}
+                <p className="text-xs text-slate-400 mt-1 truncate italic">
+                  {getNotePreview(note)}
                 </p>
 
                 {/* Footer card metrics */}

@@ -6,6 +6,7 @@ import FolderTree from './components/Sidebar/FolderTree'
 import NotesList from './components/Sidebar/NotesList'
 import MainToolbar from './components/Toolbar/MainToolbar'
 import DrawingCanvas from './components/Canvas/DrawingCanvas'
+import PageSidebar from './components/Sidebar/PageSidebar'
 import { Sidebar, Sparkles } from 'lucide-react'
 
 export default function App(): React.JSX.Element {
@@ -81,24 +82,31 @@ export default function App(): React.JSX.Element {
         />
 
         {/* Workspace Panes container */}
-        <div className="flex-1 w-full h-full p-6 flex gap-6 overflow-hidden select-none">
+        <div className="flex-1 w-full h-full flex overflow-hidden select-none">
           {activeNote ? (
-            <div className="flex-1 h-full relative">
-              <DrawingCanvas
-                noteId={activeNote.id}
-                template={pageTemplate}
-                canvasRefCallback={setCanvasHandlers}
-              />
-            </div>
+            <>
+              <div className="flex-1 h-full p-6 relative min-w-0">
+                <DrawingCanvas
+                  noteId={activeNote.id}
+                  activePageId={activeNote.activePageId}
+                  template={pageTemplate}
+                  canvasRefCallback={setCanvasHandlers}
+                />
+              </div>
+              <PageSidebar activeNote={activeNote} />
+            </>
           ) : (
             /* EMPTY STATE PANELS */
             <div className="flex-1 h-full flex flex-col items-center justify-center text-center p-8 space-y-4 select-none">
               <div className="p-4 bg-red-400/10 text-red-500 rounded-full animate-bounce">
                 <Sparkles size={36} />
               </div>
-              <h2 className="text-xl font-bold text-slate-700 dark:text-slate-300">Nenhuma Nota Aberta</h2>
+              <h2 className="text-xl font-bold text-slate-700 dark:text-slate-300">
+                Nenhuma Nota Aberta
+              </h2>
               <p className="text-xs text-slate-400 max-w-sm">
-                Selecione uma nota na barra lateral para começar a desenhar com pressão Wacom, esboçar ideias, ou criar o seu diário gráfico.
+                Selecione uma nota na barra lateral para começar a desenhar com pressão Wacom,
+                esboçar ideias, ou criar o seu diário gráfico.
               </p>
             </div>
           )}
