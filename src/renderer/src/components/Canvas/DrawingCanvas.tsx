@@ -19,10 +19,11 @@ export default function DrawingCanvas({
 }: DrawingCanvasProps): React.JSX.Element {
   const viewportRef = useRef<HTMLDivElement | null>(null)
   const lastCanvasWheelTime = useRef<number>(0)
+  const lastPageCreatedTime = useRef<number>(0)
   const isProgrammaticScroll = useRef<boolean>(false)
   const lastScrolledPageId = useRef<string | null>(null)
 
-  const { notes, setActivePage } = useNotesStore()
+  const { notes, setActivePage, addPage } = useNotesStore()
 
   // Find current note data from store
   const activeNote = notes.find((n) => n.id === noteId)
@@ -174,6 +175,23 @@ export default function DrawingCanvas({
             }, 600)
           }
         }
+      } else {
+        // Normal scroll: check if scrolling down while already at the very bottom
+        if (e.deltaY > 0) {
+          // Check if viewport is scrolled to the absolute bottom (with 3px threshold for High-DPI rounding)
+          const isAtBottom =
+            Math.ceil(viewport.scrollTop + viewport.clientHeight) >= viewport.scrollHeight - 3
+          if (isAtBottom) {
+            const now = Date.now()
+            // Throttle page creation to once every 1500ms to prevent accidental duplicates
+            if (now - lastPageCreatedTime.current > 1500) {
+              lastPageCreatedTime.current = now
+              if (activeNote) {
+                addPage(activeNote.id)
+              }
+            }
+          }
+        }
       }
     }
 
@@ -181,7 +199,7 @@ export default function DrawingCanvas({
     return () => {
       viewport.removeEventListener('wheel', handleWheel)
     }
-  }, [zoom, setZoom, activeNote, activePageId, noteId, setActivePage])
+  }, [zoom, setZoom, activeNote, activePageId, noteId, setActivePage, addPage])
 
   // Programmatic Scroll: Scroll to active page when selected externally (e.g., from PageSidebar)
   useEffect(() => {
