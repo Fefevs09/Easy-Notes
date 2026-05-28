@@ -1,18 +1,18 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 
 @layer base {
   :root {
-    --bg-primary: #F4F5F7;
-    --bg-secondary: #FFFFFF;
-    --bg-tertiary: #E5E7EB;
-    --border-color: #E2E8F0;
-    --text-primary: #1E293B;
-    --text-secondary: #64748B;
-    --accent: #FF5E5B;
-    --accent-hover: #E04E4B;
-    --mac-sidebar: #EAEBED;
+    --bg-primary: #f4f5f7;
+    --bg-secondary: #ffffff;
+    --bg-tertiary: #e5e7eb;
+    --border-color: #e2e8f0;
+    --text-primary: #1e293b;
+    --text-secondary: #64748b;
+    --accent: #ff5e5b;
+    --accent-hover: #e04e4b;
+    --mac-sidebar: #eaebed;
     --card-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05);
-    
+
     /* Paper background templates */
     --paper-line-color: rgba(226, 232, 240, 0.8);
     --paper-grid-color: rgba(226, 232, 240, 0.5);
@@ -20,16 +20,16 @@
 
   .dark {
     --bg-primary: #121214;
-    --bg-secondary: #1E1E22;
-    --bg-tertiary: #2D2D34;
-    --border-color: #2F2F37;
-    --text-primary: #F1F5F9;
-    --text-secondary: #94A3B8;
-    --accent: #FF6B6B;
-    --accent-hover: #FF8787;
-    --mac-sidebar: #18181C;
+    --bg-secondary: #1e1e22;
+    --bg-tertiary: #2d2d34;
+    --border-color: #2f2f37;
+    --text-primary: #f1f5f9;
+    --text-secondary: #94a3b8;
+    --accent: #ff6b6b;
+    --accent-hover: #ff8787;
+    --mac-sidebar: #18181c;
     --card-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.3), 0 4px 6px -4px rgb(0 0 0 / 0.3);
-    
+
     /* Paper background templates in dark mode */
     --paper-line-color: rgba(71, 85, 105, 0.4);
     --paper-grid-color: rgba(71, 85, 105, 0.25);
@@ -38,7 +38,13 @@
   body {
     background-color: var(--bg-primary);
     color: var(--text-primary);
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-family:
+      'Inter',
+      -apple-system,
+      BlinkMacSystemFont,
+      'Segoe UI',
+      Roboto,
+      sans-serif;
     overflow: hidden;
     margin: 0;
     padding: 0;
@@ -93,27 +99,27 @@
 
 /* Paper Templates background patterns */
 .paper-ruled {
-  background-color: #FFFFFF;
+  background-color: #ffffff;
   background-image: linear-gradient(rgba(203, 213, 225, 0.65) 1px, transparent 1px);
   background-size: 100% 28px;
 }
 
 .paper-grid {
-  background-color: #FFFFFF;
-  background-image: 
+  background-color: #ffffff;
+  background-image:
     linear-gradient(rgba(203, 213, 225, 0.45) 1px, transparent 1px),
     linear-gradient(90deg, rgba(203, 213, 225, 0.45) 1px, transparent 1px);
   background-size: 24px 24px;
 }
 
 .paper-dotted {
-  background-color: #FFFFFF;
+  background-color: #ffffff;
   background-image: radial-gradient(rgba(203, 213, 225, 0.65) 1px, transparent 1px);
   background-size: 20px 20px;
 }
 
 .paper-blank {
-  background-color: #FFFFFF;
+  background-color: #ffffff;
 }
 
 /* Canvas overlay sizing */

@@ -1,12 +1,14 @@
 # Easy Notes
 
 CONTEXTO DO PROJETO:
+
 - Tipo: Clone do Samsung Notes para macOS
 - Stack: Electron + React + Fabric.js/Konva.js + TypeScript
 - Objetivo: Replicar 100% das funcionalidades e design
 - Prioridade: Integração Wacom com detecção de pressão
 
 ARQUITETURA:
+
 - Electron: Processo principal para I/O nativo
 - React: Interface do usuário
 - Fabric.js: Desenho livre e pinceladas
@@ -14,12 +16,12 @@ ARQUITETURA:
 - Pointer Events API: Captura de input Wacom/mouse/touch
 
 PADRÕES DE CÓDIGO:
+
 - TypeScript strict mode
 - Functional components + Hooks
 - Custom hooks para lógica reutilizável
 - Zustand para state management
 - TailwindCSS para estilos
-
 
 Aplicação desktop multiplataforma (focada em macOS) que replica fielmente o design e funcionalidades do Samsung Notes, com suporte completo para mesas digitalizadoras Wacom.
 
@@ -30,124 +32,123 @@ Suporte Wacom: Detecção completa de pressão, inclinação e botões
 Performance: Renderização suave mesmo com desenhos complexos
 Multiplataforma: Prioridade macOS, mas compatível com Windows/Linux
 
-
 🛠️ Stack Tecnológica
 CamadaTecnologiaPropósitoDesktop FrameworkElectronAplicação nativa multiplataformaUI FrameworkReact 18+Interface de usuárioCanvas EngineFabric.js + Konva.jsRenderização e manipulação de desenhosInput HandlingPointer Events APICaptura de eventos de caneta/mouseLinguagemTypeScriptType safety e melhor DXBuild ToolViteBuild rápido e HMRStylingTailwind CSS + CSS ModulesEstilização responsiva
 
 🏗️ Arquitetura do Sistema
 ┌─────────────────────────────────────┐
-│         Electron Main Process       │
-│  - Window Management                │
-│  - File System Access               │
-│  - Native Menu Integration          │
+│ Electron Main Process │
+│ - Window Management │
+│ - File System Access │
+│ - Native Menu Integration │
 └──────────────┬──────────────────────┘
-               │ IPC
+│ IPC
 ┌──────────────▼──────────────────────┐
-│      Electron Renderer Process      │
-│                                     │
-│  ┌───────────────────────────────┐ │
-│  │      React Application        │ │
-│  │                               │ │
-│  │  ┌─────────────────────────┐ │ │
-│  │  │   UI Components Layer   │ │ │
-│  │  │  - Toolbar              │ │ │
-│  │  │  - Sidebar              │ │ │
-│  │  │  - Note List            │ │ │
-│  │  └───────────┬─────────────┘ │ │
-│  │              │               │ │
-│  │  ┌───────────▼─────────────┐ │ │
-│  │  │   Canvas Engine Layer   │ │ │
-│  │  │  - Fabric.js (drawing)  │ │ │
-│  │  │  - Konva.js (shapes)    │ │ │
-│  │  └───────────┬─────────────┘ │ │
-│  │              │               │ │
-│  │  ┌───────────▼─────────────┐ │ │
-│  │  │   Input Handler Layer   │ │ │
-│  │  │  - Pointer Events API   │ │ │
-│  │  │  - Wacom Driver Bridge  │ │ │
-│  │  └─────────────────────────┘ │ │
-│  └───────────────────────────────┘ │
+│ Electron Renderer Process │
+│ │
+│ ┌───────────────────────────────┐ │
+│ │ React Application │ │
+│ │ │ │
+│ │ ┌─────────────────────────┐ │ │
+│ │ │ UI Components Layer │ │ │
+│ │ │ - Toolbar │ │ │
+│ │ │ - Sidebar │ │ │
+│ │ │ - Note List │ │ │
+│ │ └───────────┬─────────────┘ │ │
+│ │ │ │ │
+│ │ ┌───────────▼─────────────┐ │ │
+│ │ │ Canvas Engine Layer │ │ │
+│ │ │ - Fabric.js (drawing) │ │ │
+│ │ │ - Konva.js (shapes) │ │ │
+│ │ └───────────┬─────────────┘ │ │
+│ │ │ │ │
+│ │ ┌───────────▼─────────────┐ │ │
+│ │ │ Input Handler Layer │ │ │
+│ │ │ - Pointer Events API │ │ │
+│ │ │ - Wacom Driver Bridge │ │ │
+│ │ └─────────────────────────┘ │ │
+│ └───────────────────────────────┘ │
 └─────────────────────────────────────┘
 
 📦 Estrutura de Diretórios
 samsung-notes-clone/
 ├── electron/
-│   ├── main.ts              # Processo principal do Electron
-│   ├── preload.ts           # Script de preload seguro
-│   └── ipc/                 # Handlers IPC
-│       ├── file-system.ts
-│       └── window-manager.ts
+│ ├── main.ts # Processo principal do Electron
+│ ├── preload.ts # Script de preload seguro
+│ └── ipc/ # Handlers IPC
+│ ├── file-system.ts
+│ └── window-manager.ts
 │
 ├── src/
-│   ├── components/          # Componentes React
-│   │   ├── Canvas/
-│   │   │   ├── DrawingCanvas.tsx
-│   │   │   ├── CanvasToolbar.tsx
-│   │   │   └── LayerManager.tsx
-│   │   ├── Sidebar/
-│   │   │   ├── NotesList.tsx
-│   │   │   └── FolderTree.tsx
-│   │   ├── Toolbar/
-│   │   │   ├── MainToolbar.tsx
-│   │   │   └── DrawingTools.tsx
-│   │   └── Editor/
-│   │       ├── TextEditor.tsx
-│   │       └── RichTextToolbar.tsx
-│   │
-│   ├── lib/                 # Lógica core
-│   │   ├── canvas/
-│   │   │   ├── fabric-manager.ts
-│   │   │   ├── konva-manager.ts
-│   │   │   └── layer-system.ts
-│   │   ├── input/
-│   │   │   ├── pointer-handler.ts
-│   │   │   ├── wacom-detector.ts
-│   │   │   └── gesture-recognizer.ts
-│   │   ├── storage/
-│   │   │   ├── note-storage.ts
-│   │   │   ├── serializer.ts
-│   │   │   └── indexeddb-manager.ts
-│   │   └── tools/
-│   │       ├── pen-tool.ts
-│   │       ├── eraser-tool.ts
-│   │       ├── highlighter-tool.ts
-│   │       └── shape-tools.ts
-│   │
-│   ├── hooks/               # Custom React Hooks
-│   │   ├── useCanvas.ts
-│   │   ├── useWacomInput.ts
-│   │   ├── useNoteStorage.ts
-│   │   └── useToolSelection.ts
-│   │
-│   ├── store/               # State Management (Zustand/Redux)
-│   │   ├── canvas-store.ts
-│   │   ├── notes-store.ts
-│   │   └── ui-store.ts
-│   │
-│   ├── types/               # TypeScript Definitions
-│   │   ├── canvas.d.ts
-│   │   ├── note.d.ts
-│   │   └── wacom.d.ts
-│   │
-│   ├── styles/              # Estilos globais
-│   │   └── globals.css
-│   │
-│   ├── App.tsx              # Componente raiz
-│   └── main.tsx             # Entry point React
+│ ├── components/ # Componentes React
+│ │ ├── Canvas/
+│ │ │ ├── DrawingCanvas.tsx
+│ │ │ ├── CanvasToolbar.tsx
+│ │ │ └── LayerManager.tsx
+│ │ ├── Sidebar/
+│ │ │ ├── NotesList.tsx
+│ │ │ └── FolderTree.tsx
+│ │ ├── Toolbar/
+│ │ │ ├── MainToolbar.tsx
+│ │ │ └── DrawingTools.tsx
+│ │ └── Editor/
+│ │ ├── TextEditor.tsx
+│ │ └── RichTextToolbar.tsx
+│ │
+│ ├── lib/ # Lógica core
+│ │ ├── canvas/
+│ │ │ ├── fabric-manager.ts
+│ │ │ ├── konva-manager.ts
+│ │ │ └── layer-system.ts
+│ │ ├── input/
+│ │ │ ├── pointer-handler.ts
+│ │ │ ├── wacom-detector.ts
+│ │ │ └── gesture-recognizer.ts
+│ │ ├── storage/
+│ │ │ ├── note-storage.ts
+│ │ │ ├── serializer.ts
+│ │ │ └── indexeddb-manager.ts
+│ │ └── tools/
+│ │ ├── pen-tool.ts
+│ │ ├── eraser-tool.ts
+│ │ ├── highlighter-tool.ts
+│ │ └── shape-tools.ts
+│ │
+│ ├── hooks/ # Custom React Hooks
+│ │ ├── useCanvas.ts
+│ │ ├── useWacomInput.ts
+│ │ ├── useNoteStorage.ts
+│ │ └── useToolSelection.ts
+│ │
+│ ├── store/ # State Management (Zustand/Redux)
+│ │ ├── canvas-store.ts
+│ │ ├── notes-store.ts
+│ │ └── ui-store.ts
+│ │
+│ ├── types/ # TypeScript Definitions
+│ │ ├── canvas.d.ts
+│ │ ├── note.d.ts
+│ │ └── wacom.d.ts
+│ │
+│ ├── styles/ # Estilos globais
+│ │ └── globals.css
+│ │
+│ ├── App.tsx # Componente raiz
+│ └── main.tsx # Entry point React
 │
-├── public/                  # Assets estáticos
-│   ├── icons/
-│   └── fonts/
+├── public/ # Assets estáticos
+│ ├── icons/
+│ └── fonts/
 │
-├── tests/                   # Testes
-│   ├── unit/
-│   ├── integration/
-│   └── e2e/
+├── tests/ # Testes
+│ ├── unit/
+│ ├── integration/
+│ └── e2e/
 │
-├── docs/                    # Documentação
-│   ├── ARCHITECTURE.md
-│   ├── WACOM_INTEGRATION.md
-│   └── AI_COLLABORATION.md
+├── docs/ # Documentação
+│ ├── ARCHITECTURE.md
+│ ├── WACOM_INTEGRATION.md
+│ └── AI_COLLABORATION.md
 │
 ├── package.json
 ├── tsconfig.json
@@ -157,66 +158,67 @@ samsung-notes-clone/
 └── README.md
 
 🎨 Funcionalidades Core (Paridade com Samsung Notes)
+
 1. Sistema de Desenho
 
- Caneta com detecção de pressão (Wacom)
- Marcador/Highlighter semitransparente
- Borracha (apaga traços completos ou parciais)
- Lápis com textura realista
- Pincel caligráfico
- Cores personalizáveis (paleta Samsung Notes)
- Espessuras de traço variáveis
+Caneta com detecção de pressão (Wacom)
+Marcador/Highlighter semitransparente
+Borracha (apaga traços completos ou parciais)
+Lápis com textura realista
+Pincel caligráfico
+Cores personalizáveis (paleta Samsung Notes)
+Espessuras de traço variáveis
 
 2. Ferramentas de Forma
 
- Linha reta
- Círculo/Elipse
- Retângulo
- Triângulo
- Setas
- Reconhecimento automático de formas
+Linha reta
+Círculo/Elipse
+Retângulo
+Triângulo
+Setas
+Reconhecimento automático de formas
 
 3. Editor de Texto
 
- Texto rico com formatação
- Fontes variadas
- Tamanhos e cores
- Alinhamento (esquerda, centro, direita)
- Listas com bullets e numeração
- Checkboxes interativos
+Texto rico com formatação
+Fontes variadas
+Tamanhos e cores
+Alinhamento (esquerda, centro, direita)
+Listas com bullets e numeração
+Checkboxes interativos
 
 4. Gestão de Notas
 
- Criar/Editar/Deletar notas
- Pastas e subpastas
- Tags e favoritos
- Busca full-text
- Ordenação por data/nome
- Visualização em lista/grid
+Criar/Editar/Deletar notas
+Pastas e subpastas
+Tags e favoritos
+Busca full-text
+Ordenação por data/nome
+Visualização em lista/grid
 
 5. Recursos Avançados
 
- Camadas (layers)
- Histórico de Undo/Redo ilimitado
- Seleção múltipla de objetos
- Transformações (rotação, escala, arrastar)
- Exportação (PDF, PNG, JPG)
- Sincronização em nuvem (opcional)
- Templates de página (linhas, grade, pontilhado)
+Camadas (layers)
+Histórico de Undo/Redo ilimitado
+Seleção múltipla de objetos
+Transformações (rotação, escala, arrastar)
+Exportação (PDF, PNG, JPG)
+Sincronização em nuvem (opcional)
+Templates de página (linhas, grade, pontilhado)
 
 6. Integração Wacom
 
- Detecção automática de mesa Wacom
- Leitura de níveis de pressão (0-1)
- Suporte a inclinação da caneta
- Mapeamento de botões laterais
- Calibração de sensibilidade
- Suporte a toque (se disponível)
-
+Detecção automática de mesa Wacom
+Leitura de níveis de pressão (0-1)
+Suporte a inclinação da caneta
+Mapeamento de botões laterais
+Calibração de sensibilidade
+Suporte a toque (se disponível)
 
 ## Regras Fundamentais
 
 ### 1. Test-Driven Development (TDD) Obrigatório
+
 - **NUNCA** implemente uma funcionalidade sem teste
 - **NUNCA** considere uma tarefa completa até o teste passar
 - **SEMPRE** escreva o teste ANTES do código de implementação
@@ -236,6 +238,7 @@ samsung-notes-clone/
 ## Estrutura de Testes
 
 ### Localização
+
 ```
 tests/
 ├── unit/
@@ -259,78 +262,78 @@ tests/
 ## Template de Teste Unitário
 
 ```typescript
-import { describe, it, expect, beforeEach } from 'vitest';
-import { PenTool } from '@/lib/tools/pen-tool';
+import { describe, it, expect, beforeEach } from 'vitest'
+import { PenTool } from '@/lib/tools/pen-tool'
 
 describe('PenTool', () => {
-  let penTool: PenTool;
+  let penTool: PenTool
 
   beforeEach(() => {
-    penTool = new PenTool();
-  });
+    penTool = new PenTool()
+  })
 
   describe('Pressure Detection', () => {
     it('should apply correct width with 50% pressure', () => {
-      const stroke = penTool.createStroke(0.5);
-      expect(stroke.width).toBe(2.5);
-    });
+      const stroke = penTool.createStroke(0.5)
+      expect(stroke.width).toBe(2.5)
+    })
 
     it('should apply correct width with 100% pressure', () => {
-      const stroke = penTool.createStroke(1.0);
-      expect(stroke.width).toBe(5);
-    });
+      const stroke = penTool.createStroke(1.0)
+      expect(stroke.width).toBe(5)
+    })
 
     it('should apply correct width with 0% pressure', () => {
-      const stroke = penTool.createStroke(0);
-      expect(stroke.width).toBe(0);
-    });
-  });
+      const stroke = penTool.createStroke(0)
+      expect(stroke.width).toBe(0)
+    })
+  })
 
   describe('Color Application', () => {
     it('should use default black color', () => {
-      const stroke = penTool.createStroke(0.5);
-      expect(stroke.color).toBe('#000000');
-    });
+      const stroke = penTool.createStroke(0.5)
+      expect(stroke.color).toBe('#000000')
+    })
 
     it('should apply custom color', () => {
-      penTool.setColor('#FF0000');
-      const stroke = penTool.createStroke(0.5);
-      expect(stroke.color).toBe('#FF0000');
-    });
-  });
-});
+      penTool.setColor('#FF0000')
+      const stroke = penTool.createStroke(0.5)
+      expect(stroke.color).toBe('#FF0000')
+    })
+  })
+})
 ```
 
 ## Template de Teste de Integração
 
 ```typescript
-import { describe, it, expect } from 'vitest';
-import { CanvasManager } from '@/lib/canvas/fabric-manager';
-import { PenTool } from '@/lib/tools/pen-tool';
+import { describe, it, expect } from 'vitest'
+import { CanvasManager } from '@/lib/canvas/fabric-manager'
+import { PenTool } from '@/lib/tools/pen-tool'
 
 describe('Canvas + PenTool Integration', () => {
   it('should add stroke to canvas', () => {
-    const canvas = new CanvasManager();
-    const penTool = new PenTool();
-    
-    const stroke = penTool.createStroke(0.5);
-    canvas.addObject(stroke);
-    
-    expect(canvas.getObjects()).toHaveLength(1);
-    expect(canvas.getObjects()[0]).toBe(stroke);
-  });
+    const canvas = new CanvasManager()
+    const penTool = new PenTool()
+
+    const stroke = penTool.createStroke(0.5)
+    canvas.addObject(stroke)
+
+    expect(canvas.getObjects()).toHaveLength(1)
+    expect(canvas.getObjects()[0]).toBe(stroke)
+  })
 
   it('should undo last stroke', () => {
-    const canvas = new CanvasManager();
-    const penTool = new PenTool();
-    
-    const stroke = penTool.createStroke(0.5);
-    canvas.addObject(stroke);
-    canvas.undo();
-    
-    expect(canvas.getObjects()).toHaveLength(0);
-  });
-});
+    const canvas = new CanvasManager()
+    const penTool = new PenTool()
+
+    const stroke = penTool.createStroke(0.5)
+    canvas.addObject(stroke)
+    canvas.undo()
+
+    expect(canvas.getObjects()).toHaveLength(0)
+  })
+})
 ```
 
 ## Critérios de Aceitação
@@ -399,13 +402,13 @@ npm test integration
 // tests/unit/tools/pen-tool.test.ts
 describe('PenTool - Wacom Pressure', () => {
   it('should create thicker lines with higher pressure', () => {
-    const tool = new PenTool();
-    const lightStroke = tool.createStroke(0.3);
-    const heavyStroke = tool.createStroke(0.9);
-    
-    expect(heavyStroke.width).toBeGreaterThan(lightStroke.width);
-  });
-});
+    const tool = new PenTool()
+    const lightStroke = tool.createStroke(0.3)
+    const heavyStroke = tool.createStroke(0.9)
+
+    expect(heavyStroke.width).toBeGreaterThan(lightStroke.width)
+  })
+})
 ```
 
 **Resultado esperado**: ❌ FALHA (PenTool não existe ainda)
@@ -415,13 +418,13 @@ describe('PenTool - Wacom Pressure', () => {
 ```typescript
 // src/lib/tools/pen-tool.ts
 export class PenTool {
-  private baseWidth = 5;
+  private baseWidth = 5
 
   createStroke(pressure: number) {
     return {
       width: this.baseWidth * pressure,
       color: '#000000'
-    };
+    }
   }
 }
 ```
@@ -433,22 +436,22 @@ export class PenTool {
 ```typescript
 // src/lib/tools/pen-tool.ts
 export class PenTool {
-  private baseWidth = 5;
-  private color = '#000000';
+  private baseWidth = 5
+  private color = '#000000'
 
   createStroke(pressure: number) {
     return {
       width: this.calculateWidth(pressure),
       color: this.color
-    };
+    }
   }
 
   private calculateWidth(pressure: number): number {
-    return this.baseWidth * Math.max(0, Math.min(1, pressure));
+    return this.baseWidth * Math.max(0, Math.min(1, pressure))
   }
 
   setColor(color: string) {
-    this.color = color;
+    this.color = color
   }
 }
 ```
@@ -460,17 +463,17 @@ export class PenTool {
 ```typescript
 describe('PenTool - Edge Cases', () => {
   it('should handle negative pressure', () => {
-    const tool = new PenTool();
-    const stroke = tool.createStroke(-0.5);
-    expect(stroke.width).toBe(0);
-  });
+    const tool = new PenTool()
+    const stroke = tool.createStroke(-0.5)
+    expect(stroke.width).toBe(0)
+  })
 
   it('should handle pressure > 1', () => {
-    const tool = new PenTool();
-    const stroke = tool.createStroke(1.5);
-    expect(stroke.width).toBe(5);
-  });
-});
+    const tool = new PenTool()
+    const stroke = tool.createStroke(1.5)
+    expect(stroke.width).toBe(5)
+  })
+})
 ```
 
 **Resultado esperado**: ✅ TODOS PASSAM
@@ -483,6 +486,7 @@ describe('PenTool - Edge Cases', () => {
 FEATURE: [Nome da Feature]
 
 TESTE OBRIGATÓRIO:
+
 - Escreva o teste ANTES da implementação
 - O teste deve FALHAR inicialmente
 - A implementação deve fazer o teste PASSAR
@@ -491,6 +495,7 @@ TESTE OBRIGATÓRIO:
 
 CRITÉRIO DE PARADA:
 A IA só deve considerar a tarefa completa quando:
+
 1. Todos os testes PASSAREM (✅)
 2. Cobertura de código atingida
 3. Nenhum teste flakey
@@ -502,11 +507,13 @@ A IA só deve considerar a tarefa completa quando:
 ✅ IMPLEMENTAÇÃO COMPLETA
 
 TESTES:
+
 - ✅ pen-tool.test.ts (5 testes passando)
 - ✅ Cobertura: 95% (19/20 linhas)
 - ✅ Tempo de execução: 45ms
 
 ARQUIVOS CRIADOS/MODIFICADOS:
+
 - tests/unit/tools/pen-tool.test.ts (novo)
 - src/lib/tools/pen-tool.ts (novo)
 - src/types/tools.d.ts (modificado)
@@ -518,16 +525,19 @@ PRÓXIMOS PASSOS:
 ## Ferramentas de Teste
 
 ### Vitest (Unit/Integration)
+
 ```bash
 npm i -D vitest @vitest/ui
 ```
 
 ### Playwright (E2E)
+
 ```bash
 npm i -D @playwright/test
 ```
 
 ### Coverage
+
 ```bash
 npm i -D @vitest/coverage-v8
 ```
@@ -536,7 +546,7 @@ npm i -D @vitest/coverage-v8
 
 ```typescript
 // vitest.config.ts
-import { defineConfig } from 'vitest/config';
+import { defineConfig } from 'vitest/config'
 
 export default defineConfig({
   test: {
@@ -554,7 +564,7 @@ export default defineConfig({
       }
     }
   }
-});
+})
 ```
 
 ## Falhas Comuns a Evitar

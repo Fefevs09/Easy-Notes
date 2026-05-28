@@ -56,7 +56,7 @@ describe('Pointer Coordinate Precision under Zoom and Scrolling', () => {
         // Setup bounding rect of the canvas under the current zoom level
         const rect = {
           left: 24, // accounting for p-6 padding
-          top: 80,  // accounting for header toolbar
+          top: 80, // accounting for header toolbar
           width: baseWidth * zoom,
           height: baseHeight * zoom
         }
@@ -66,10 +66,23 @@ describe('Pointer Coordinate Precision under Zoom and Scrolling', () => {
         const inputClientY = 300
 
         // 1. Pointer Down / Move maps client position to logical space
-        const logical = calculateLogicalCoords(inputClientX, inputClientY, rect, baseWidth, baseHeight)
+        const logical = calculateLogicalCoords(
+          inputClientX,
+          inputClientY,
+          rect,
+          baseWidth,
+          baseHeight
+        )
 
         // 2. Redraw and Browser Render scales back to screen position
-        const screen = calculateRenderedScreenCoords(logical.x, logical.y, zoom, rect, baseWidth, baseHeight)
+        const screen = calculateRenderedScreenCoords(
+          logical.x,
+          logical.y,
+          zoom,
+          rect,
+          baseWidth,
+          baseHeight
+        )
 
         // Assert 100% precision with zero deviation
         expect(screen.x).toBeCloseTo(inputClientX, 5)
@@ -90,7 +103,7 @@ describe('Pointer Coordinate Precision under Zoom and Scrolling', () => {
 
       const rect = {
         left: 24 - scrollLeft, // canvas slides left
-        top: 80 - scrollTop,  // canvas slides up
+        top: 80 - scrollTop, // canvas slides up
         width: baseWidth * zoom,
         height: baseHeight * zoom
       }
@@ -99,8 +112,21 @@ describe('Pointer Coordinate Precision under Zoom and Scrolling', () => {
       const inputClientX = 600
       const inputClientY = 500
 
-      const logical = calculateLogicalCoords(inputClientX, inputClientY, rect, baseWidth, baseHeight)
-      const screen = calculateRenderedScreenCoords(logical.x, logical.y, zoom, rect, baseWidth, baseHeight)
+      const logical = calculateLogicalCoords(
+        inputClientX,
+        inputClientY,
+        rect,
+        baseWidth,
+        baseHeight
+      )
+      const screen = calculateRenderedScreenCoords(
+        logical.x,
+        logical.y,
+        zoom,
+        rect,
+        baseWidth,
+        baseHeight
+      )
 
       expect(screen.x).toBeCloseTo(inputClientX, 5)
       expect(screen.y).toBeCloseTo(inputClientY, 5)

@@ -63,9 +63,12 @@ describe('KonvaManager', () => {
       const end = { x: 50, y: 50 }
       const tri = manager.computeTriangleGeometry(start, end)
       expect(tri.points).toEqual([
-        30, 10, // top center
-        10, 50, // bottom left
-        50, 50  // bottom right
+        30,
+        10, // top center
+        10,
+        50, // bottom left
+        50,
+        50 // bottom right
       ])
     })
   })

@@ -101,8 +101,10 @@ export default function TextEditor({ note, onContentChange }: TextEditorProps): 
     <div className="flex flex-col h-full bg-white dark:bg-zinc-900 border border-slate-200/50 dark:border-zinc-800/50 rounded-2xl p-6 select-text overflow-y-auto space-y-4">
       {/* Editor Title Bar */}
       <div className="flex items-center justify-between border-b border-slate-100 dark:border-zinc-800/60 pb-3">
-        <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">Editor de Texto Rico</span>
-        
+        <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+          Editor de Texto Rico
+        </span>
+
         {/* Quick Toolbar insert buttons */}
         <div className="flex items-center gap-1">
           <button
@@ -150,9 +152,7 @@ export default function TextEditor({ note, onContentChange }: TextEditorProps): 
                     className="w-4 h-4 rounded border-slate-300 dark:border-zinc-700 text-red-500 accent-red-400 cursor-pointer mt-1 focus:ring-red-400"
                   />
                 )}
-                {block.type === 'paragraph' && (
-                  <div className="w-1.5" />
-                )}
+                {block.type === 'paragraph' && <div className="w-1.5" />}
               </div>
 
               {/* Editable Text Area Input */}
@@ -172,7 +172,6 @@ export default function TextEditor({ note, onContentChange }: TextEditorProps): 
 
                 {/* Inline Action Bar (visible on hover) */}
                 <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1.5 text-slate-400 text-xxs pt-1">
-                  
                   {/* Formattings toggles */}
                   <button
                     onClick={() => handleToggleFormat(block.id, 'bold')}

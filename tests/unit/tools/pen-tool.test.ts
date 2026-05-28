@@ -33,7 +33,7 @@ describe('PenTool', () => {
       const stroke = penTool.createStroke(-0.5)
       expect(stroke.width).toBe(0)
     })
-  });
+  })
 
   describe('Color Application', () => {
     it('should use default black color', () => {

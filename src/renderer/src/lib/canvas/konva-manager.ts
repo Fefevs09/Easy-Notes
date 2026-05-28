@@ -59,9 +59,12 @@ export class KonvaManager {
 
     return {
       points: [
-        topCenterX, minY, // Top vertex
-        minX, maxY,       // Bottom left
-        maxX, maxY        // Bottom right
+        topCenterX,
+        minY, // Top vertex
+        minX,
+        maxY, // Bottom left
+        maxX,
+        maxY // Bottom right
       ]
     }
   }

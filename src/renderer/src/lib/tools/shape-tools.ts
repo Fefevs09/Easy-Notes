@@ -15,8 +15,10 @@ export function detectShape(points: Point[]): {
   const end = points[points.length - 1]
 
   // Calculate bounding box
-  let minX = Infinity, maxX = -Infinity
-  let minY = Infinity, maxY = -Infinity
+  let minX = Infinity,
+    maxX = -Infinity
+  let minY = Infinity,
+    maxY = -Infinity
   for (const p of points) {
     if (p.x < minX) minX = p.x
     if (p.x > maxX) maxX = p.x

@@ -49,7 +49,7 @@ describe('CanvasManager (FabricManager)', () => {
     const stroke2 = { id: 'stroke-2' }
     canvas.addObject(stroke1)
     canvas.undo()
-    
+
     // Redo is available
     canvas.addObject(stroke2)
     canvas.redo() // should do nothing since redo stack is cleared

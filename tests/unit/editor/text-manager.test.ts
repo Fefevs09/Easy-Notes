@@ -72,7 +72,16 @@ describe('TextManager', () => {
   })
 
   it('should allow setting block array directly', () => {
-    const customBlocks = [{ id: '99', type: 'paragraph' as const, text: 'Custom', bold: false, italic: false, underline: false }]
+    const customBlocks = [
+      {
+        id: '99',
+        type: 'paragraph' as const,
+        text: 'Custom',
+        bold: false,
+        italic: false,
+        underline: false
+      }
+    ]
     manager.setBlocks(customBlocks)
     expect(manager.getBlocks()).toHaveLength(1)
     expect(manager.getBlocks()[0].text).toBe('Custom')
@@ -83,9 +92,9 @@ describe('TextManager', () => {
     manager.updateBlockText(firstBlock.id, 'Text')
     manager.toggleBlockFormat(firstBlock.id, 'bold')
     manager.changeBlockType(firstBlock.id, 'todo')
-    
+
     manager.removeBlock(firstBlock.id)
-    
+
     expect(manager.getBlocks()).toHaveLength(1)
     expect(manager.getBlocks()[0].text).toBe('')
     expect(manager.getBlocks()[0].bold).toBe(false)

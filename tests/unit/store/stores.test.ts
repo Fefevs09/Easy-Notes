@@ -122,10 +122,12 @@ describe('NotesStore State Management', () => {
   it('should allow editing a note title and content', () => {
     useNotesStore.getState().addNote('Test Note', 'all')
     const noteId = useNotesStore.getState().notes[0].id
-    
-    useNotesStore.getState().updateNote(noteId, { title: 'Updated Title', content: 'Some content text' })
+
+    useNotesStore
+      .getState()
+      .updateNote(noteId, { title: 'Updated Title', content: 'Some content text' })
     useNotesStore.getState().updateNote('invalid-id', { title: 'No effect' }) // hit falsy branch
-    
+
     const note = useNotesStore.getState().notes[0]
     expect(note.title).toBe('Updated Title')
     expect(note.content).toBe('Some content text')
@@ -136,10 +138,10 @@ describe('NotesStore State Management', () => {
     useNotesStore.getState().addNote('Test Note 2', 'all')
     const note1Id = useNotesStore.getState().notes[1].id
     const note2Id = useNotesStore.getState().notes[0].id
-    
+
     // Set active note to note 2
     useNotesStore.getState().setActiveNoteId(note2Id)
-    
+
     // Delete note 1 (which is not active)
     useNotesStore.getState().deleteNote(note1Id)
     expect(useNotesStore.getState().notes).toHaveLength(1)

@@ -1,13 +1,6 @@
 import React, { useState } from 'react'
 import { useCanvasStore, ToolType } from '../../store/canvas-store'
-import {
-  Pen,
-  Highlighter,
-  Eraser,
-  Square,
-  ChevronDown,
-  Activity
-} from 'lucide-react'
+import { Pen, Highlighter, Eraser, Square, ChevronDown, Activity } from 'lucide-react'
 
 const PEN_COLORS = ['#000000', '#2B59C3', '#D63C3C', '#278A45', '#EAA812', '#7E36C2']
 const HIGH_COLORS = ['#FFFF00', '#FF8CC6', '#8CFF95', '#8CE5FF']
@@ -32,7 +25,9 @@ export default function CanvasToolbar(): React.JSX.Element {
     setEraserMode
   } = useCanvasStore()
 
-  const [activeMenu, setActiveMenu] = useState<'pen' | 'highlighter' | 'eraser' | 'shape' | 'layers' | null>(null)
+  const [activeMenu, setActiveMenu] = useState<
+    'pen' | 'highlighter' | 'eraser' | 'shape' | 'layers' | null
+  >(null)
 
   const toggleMenu = (menu: 'pen' | 'highlighter' | 'eraser' | 'shape' | 'layers') => {
     setActiveMenu(activeMenu === menu ? null : menu)
@@ -175,7 +170,9 @@ export default function CanvasToolbar(): React.JSX.Element {
           {/* 3. ERASER CONFIGURATION */}
           {activeMenu === 'eraser' && (
             <>
-              <div className="font-semibold border-b border-white/10 pb-1.5">Borracha de Precisão</div>
+              <div className="font-semibold border-b border-white/10 pb-1.5">
+                Borracha de Precisão
+              </div>
 
               {/* Eraser Mode Selection */}
               <div className="space-y-1.5">
@@ -225,7 +222,9 @@ export default function CanvasToolbar(): React.JSX.Element {
           {/* 4. SHAPE CONFIGURATION */}
           {activeMenu === 'shape' && (
             <>
-              <div className="font-semibold border-b border-white/10 pb-1.5">Formas Geométricas</div>
+              <div className="font-semibold border-b border-white/10 pb-1.5">
+                Formas Geométricas
+              </div>
 
               {/* Shape Types Selector Grid */}
               <div className="grid grid-cols-3 gap-2">
@@ -256,18 +255,18 @@ export default function CanvasToolbar(): React.JSX.Element {
               </label>
             </>
           )}
-
         </div>
       )}
 
       {/* Primary Floating Toolbar Bar */}
       <div className="flex items-center gap-1 z-50">
-
         {/* Pen Button */}
         <button
           onClick={() => handleToolClick('pen', 'pen')}
           className={`p-2.5 rounded-full transition-all hover:scale-110 flex items-center gap-0.5 ${
-            activeTool === 'pen' ? 'bg-red-400 text-white shadow-md' : 'text-slate-400 hover:text-slate-100'
+            activeTool === 'pen'
+              ? 'bg-red-400 text-white shadow-md'
+              : 'text-slate-400 hover:text-slate-100'
           }`}
           title="Caneta"
         >
@@ -279,7 +278,9 @@ export default function CanvasToolbar(): React.JSX.Element {
         <button
           onClick={() => handleToolClick('highlighter', 'highlighter')}
           className={`p-2.5 rounded-full transition-all hover:scale-110 flex items-center gap-0.5 ${
-            activeTool === 'highlighter' ? 'bg-red-400 text-white shadow-md' : 'text-slate-400 hover:text-slate-100'
+            activeTool === 'highlighter'
+              ? 'bg-red-400 text-white shadow-md'
+              : 'text-slate-400 hover:text-slate-100'
           }`}
           title="Marcador"
         >
@@ -291,7 +292,9 @@ export default function CanvasToolbar(): React.JSX.Element {
         <button
           onClick={() => handleToolClick('eraser', 'eraser')}
           className={`p-2.5 rounded-full transition-all hover:scale-110 flex items-center gap-0.5 ${
-            activeTool === 'eraser' ? 'bg-red-400 text-white shadow-md' : 'text-slate-400 hover:text-slate-100'
+            activeTool === 'eraser'
+              ? 'bg-red-400 text-white shadow-md'
+              : 'text-slate-400 hover:text-slate-100'
           }`}
           title="Borracha"
         >
@@ -303,14 +306,15 @@ export default function CanvasToolbar(): React.JSX.Element {
         <button
           onClick={() => handleToolClick('shape', 'shape')}
           className={`p-2.5 rounded-full transition-all hover:scale-110 flex items-center gap-0.5 ${
-            activeTool === 'shape' ? 'bg-red-400 text-white shadow-md' : 'text-slate-400 hover:text-slate-100'
+            activeTool === 'shape'
+              ? 'bg-red-400 text-white shadow-md'
+              : 'text-slate-400 hover:text-slate-100'
           }`}
           title="Formas"
         >
           <Square size={18} />
           {activeTool === 'shape' && <ChevronDown size={12} />}
         </button>
-
       </div>
     </div>
   )

@@ -12,7 +12,7 @@ describe('LayerSystem', () => {
     it('should initialize with default layers and active drawing layer', () => {
       const layers = system.getLayers()
       expect(layers).toHaveLength(4)
-      expect(layers.map(l => l.id)).toEqual(['background', 'drawing', 'shapes', 'text'])
+      expect(layers.map((l) => l.id)).toEqual(['background', 'drawing', 'shapes', 'text'])
       expect(system.getActiveLayerId()).toBe('drawing')
     })
   })
@@ -44,7 +44,7 @@ describe('LayerSystem', () => {
 
     it('should ignore duplicate layer additions', () => {
       system.addLayer('drawing', 'New Drawing Name')
-      expect(system.getLayers().filter(l => l.id === 'drawing')).toHaveLength(1)
+      expect(system.getLayers().filter((l) => l.id === 'drawing')).toHaveLength(1)
     })
 
     it('should ignore toggling visibility/lock of non-existent layers', () => {
@@ -55,7 +55,7 @@ describe('LayerSystem', () => {
 
     it('should toggle visibility of a layer', () => {
       system.toggleVisibility('shapes')
-      const shapesLayer = system.getLayers().find(l => l.id === 'shapes')
+      const shapesLayer = system.getLayers().find((l) => l.id === 'shapes')
       expect(shapesLayer?.visible).toBe(false)
 
       system.toggleVisibility('shapes')
@@ -64,7 +64,7 @@ describe('LayerSystem', () => {
 
     it('should toggle lock state of a layer', () => {
       system.toggleLock('drawing')
-      const layer = system.getLayers().find(l => l.id === 'drawing')
+      const layer = system.getLayers().find((l) => l.id === 'drawing')
       expect(layer?.locked).toBe(true)
     })
 

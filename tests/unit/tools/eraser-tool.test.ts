@@ -39,13 +39,11 @@ describe('EraserTool', () => {
       ]
       const result = eraser.eraseStroke('2', strokes)
       expect(result).toHaveLength(2)
-      expect(result.map(s => s.id)).toEqual(['1', '3'])
+      expect(result.map((s) => s.id)).toEqual(['1', '3'])
     })
 
     it('should return same list if ID is not found', () => {
-      const strokes = [
-        { id: '1', points: [] }
-      ]
+      const strokes = [{ id: '1', points: [] }]
       const result = eraser.eraseStroke('999', strokes)
       expect(result).toHaveLength(1)
     })

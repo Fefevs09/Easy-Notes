@@ -8,7 +8,7 @@ describe('NoteStorageManager Storage Logic', () => {
     storage = new NoteStorageManager()
     // Reset global mocks
     if (typeof window !== 'undefined') {
-      (window as any).electron = undefined
+      ;(window as any).electron = undefined
     }
     localStorage.clear()
   })
@@ -44,7 +44,7 @@ describe('NoteStorageManager Storage Logic', () => {
     const mockDeleteInvoke = vi.fn().mockResolvedValue(true)
 
     if (typeof window !== 'undefined') {
-      (window as any).electron = {
+      ;(window as any).electron = {
         ipcRenderer: {
           invoke: (channel: string, ...args: any[]) => {
             if (channel === 'save-note') return mockInvoke(...args)
@@ -72,7 +72,7 @@ describe('NoteStorageManager Storage Logic', () => {
 
   it('should fall back to localStorage if Electron IPC throws an error', async () => {
     if (typeof window !== 'undefined') {
-      (window as any).electron = {
+      ;(window as any).electron = {
         ipcRenderer: {
           invoke: vi.fn().mockRejectedValue(new Error('IPC Error'))
         }
