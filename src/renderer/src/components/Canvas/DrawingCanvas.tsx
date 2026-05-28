@@ -1,5 +1,6 @@
 import React, { useRef, useState, useEffect } from 'react'
 import { useCanvasStore } from '../../store/canvas-store'
+import { useNotesStore } from '../../store/notes-store'
 import { detectShape } from '../../lib/tools/shape-tools'
 import { PointerHandler } from '../../lib/input/pointer-handler'
 import { WacomDetector } from '../../lib/input/wacom-detector'
@@ -30,17 +31,25 @@ interface ShapeObj {
 
 interface DrawingCanvasProps {
   noteId: string
+  activePageId: string
   template: string
   canvasRefCallback?: (handlers: { undo: () => void; redo: () => void; clear: () => void }) => void
 }
 
 export default function DrawingCanvas({
   noteId,
+  activePageId,
   template,
   canvasRefCallback
 }: DrawingCanvasProps): React.JSX.Element {
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const viewportRef = useRef<HTMLDivElement | null>(null)
+
+  const { notes, updatePageContent } = useNotesStore()
+
+  // Find current page data from store
+  const activeNote = notes.find((n) => n.id === noteId)
+  const activePage = activeNote?.pages.find((p) => p.id === activePageId)
 
   const [strokes, setStrokes] = useState<Stroke[]>([])
   const [shapes, setShapes] = useState<ShapeObj[]>([])
@@ -53,7 +62,7 @@ export default function DrawingCanvas({
 
   // Infinite canvas dynamic size states
   const [canvasWidth, setCanvasWidth] = useState(1200)
-  const [canvasHeight, setCanvasHeight] = useState(900)
+  const [canvasHeight, setCanvasHeight] = useState(1600) // Default to a taller page
 
   // Spacebar pan navigation states
   const [isSpacePressed, setIsSpacePressed] = useState(false)
@@ -77,10 +86,30 @@ export default function DrawingCanvas({
   const pointerHandler = useRef(new PointerHandler())
   const wacomDetector = useRef(new WacomDetector())
 
+  // Sync with Store when note or page changes
+  useEffect(() => {
+    if (activePage) {
+      setStrokes(activePage.strokes || [])
+      setShapes(activePage.shapes || [])
+      setUndoStack([])
+      setRedoStack([])
+    }
+  }, [noteId, activePageId])
+
+  // Persistence Helper: Push local state to global store
+  const syncToStore = (currentStrokes: Stroke[], currentShapes: ShapeObj[]) => {
+    updatePageContent(noteId, activePageId, currentStrokes, currentShapes)
+  }
+
   // Spacebar panning key listeners
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.code === 'Space') {
+        if (
+          document.activeElement?.tagName === 'INPUT' ||
+          document.activeElement?.tagName === 'TEXTAREA'
+        )
+          return
         e.preventDefault()
         setIsSpacePressed(true)
       }
@@ -100,29 +129,27 @@ export default function DrawingCanvas({
     }
   }, [])
 
-  // Set initial canvas size to fill the viewport (minus padding) or at least 1200x900
+  // Set canvas size to fill the viewport (minus padding) or at least 1200x1600
   useEffect(() => {
     const updateSize = () => {
       const viewport = viewportRef.current
       if (viewport) {
-        // padding: p-6 is 24px on each side = 48px total.
         const width = Math.max(1200, viewport.clientWidth - 48)
-        const height = Math.max(900, viewport.clientHeight - 48)
-        setCanvasWidth((prev) => Math.max(prev, width))
-        setCanvasHeight((prev) => Math.max(prev, height))
+        const height = Math.max(1600, viewport.clientHeight - 48)
+        setCanvasWidth(width)
+        setCanvasHeight(height)
       }
     }
 
-    // Run after component mounts and when noteId changes
     const handle = requestAnimationFrame(updateSize)
     window.addEventListener('resize', updateSize)
     return () => {
       cancelAnimationFrame(handle)
       window.removeEventListener('resize', updateSize)
     }
-  }, [noteId])
+  }, [noteId, activePageId])
 
-  // Touchpad trackpad pinch-to-zoom and dynamic infinite scroll expansion handler
+  // Touchpad trackpad pinch-to-zoom handler
   useEffect(() => {
     const viewport = viewportRef.current
     if (!viewport) return
@@ -130,23 +157,9 @@ export default function DrawingCanvas({
     const handleWheel = (e: WheelEvent) => {
       if (e.ctrlKey) {
         e.preventDefault()
-        const scaleChange = -e.deltaY * 0.006 // smooth multiplier
+        const scaleChange = -e.deltaY * 0.006
         const targetZoom = zoom + scaleChange
         setZoom(targetZoom)
-      } else {
-        // Auto-expand canvas size dynamically when scrolling near the right or bottom edges
-        if (e.deltaX > 0) {
-          const isNearRightEdge = viewport.scrollLeft + viewport.clientWidth >= (canvasWidth * zoom) - 150
-          if (isNearRightEdge) {
-            setCanvasWidth((prev) => prev + 500)
-          }
-        }
-        if (e.deltaY > 0) {
-          const isNearBottomEdge = viewport.scrollTop + viewport.clientHeight >= (canvasHeight * zoom) - 150
-          if (isNearBottomEdge) {
-            setCanvasHeight((prev) => prev + 500)
-          }
-        }
       }
     }
 
@@ -154,22 +167,12 @@ export default function DrawingCanvas({
     return () => {
       viewport.removeEventListener('wheel', handleWheel)
     }
-  }, [zoom, setZoom, canvasWidth, canvasHeight])
+  }, [zoom, setZoom])
 
   // Configure pressure curve dynamically
   useEffect(() => {
     pointerHandler.current.setPressureCurve(pressureCurve)
   }, [pressureCurve])
-
-  // Clear or load drawings when note changes
-  useEffect(() => {
-    setStrokes([])
-    setShapes([])
-    setUndoStack([])
-    setRedoStack([])
-    setCanvasWidth(1200)
-    setCanvasHeight(900)
-  }, [noteId])
 
   // Provide Undo/Redo handlers to parent Toolbar
   useEffect(() => {
@@ -189,20 +192,19 @@ export default function DrawingCanvas({
     const ctx = canvas.getContext('2d')
     if (!ctx) return
 
-    // Clear canvas
     ctx.clearRect(0, 0, canvas.width, canvas.height)
-
-    // Save context and apply dynamic zoom scaling for razor-sharp vector rendering
     ctx.save()
     ctx.scale(zoom, zoom)
 
-    // Draw existing strokes
     for (const stroke of strokes) {
       drawStrokeOnContext(ctx, stroke)
     }
 
-    // Draw current active in-progress stroke
-    if (isDrawing && currentStroke.length > 0 && (activeTool === 'pen' || activeTool === 'highlighter')) {
+    if (
+      isDrawing &&
+      currentStroke.length > 0 &&
+      (activeTool === 'pen' || activeTool === 'highlighter')
+    ) {
       const activeStrokeObj: Stroke = {
         id: 'active-preview',
         tool: activeTool as any,
@@ -214,12 +216,10 @@ export default function DrawingCanvas({
       drawStrokeOnContext(ctx, activeStrokeObj)
     }
 
-    // Draw existing geometric shapes
     for (const shape of shapes) {
       drawShapeOnContext(ctx, shape)
     }
 
-    // Draw active shape drag-feedback
     if (activeTool === 'shape' && shapeStart && shapeCurrent) {
       ctx.save()
       ctx.strokeStyle = color
@@ -227,17 +227,33 @@ export default function DrawingCanvas({
       ctx.setLineDash([6, 6])
       const activeShapeObj = {
         id: 'preview',
-        type: selectedShape as any, // dynamic preview of selected shape
+        type: selectedShape as any,
         color,
         width: strokeWidth,
-        geom: { x: shapeStart.x, y: shapeStart.y, width: shapeCurrent.x - shapeStart.x, height: shapeCurrent.y - shapeStart.y }
+        geom: {
+          x: shapeStart.x,
+          y: shapeStart.y,
+          width: shapeCurrent.x - shapeStart.x,
+          height: shapeCurrent.y - shapeStart.y
+        }
       }
       drawShapeOnContext(ctx, activeShapeObj)
       ctx.restore()
     }
 
     ctx.restore()
-  }, [strokes, shapes, isDrawing, currentStroke, shapeStart, shapeCurrent, template, canvasWidth, canvasHeight, zoom])
+  }, [
+    strokes,
+    shapes,
+    isDrawing,
+    currentStroke,
+    shapeStart,
+    shapeCurrent,
+    template,
+    canvasWidth,
+    canvasHeight,
+    zoom
+  ])
 
   const drawStrokeOnContext = (ctx: CanvasRenderingContext2D, stroke: Stroke) => {
     if (stroke.points.length < 2) return
@@ -246,18 +262,14 @@ export default function DrawingCanvas({
     ctx.lineJoin = 'round'
     ctx.globalAlpha = stroke.opacity
 
-    // Draw segment by segment to vary width by stylus pressure
     for (let i = 1; i < stroke.points.length; i++) {
       const p1 = stroke.points[i - 1]
       const p2 = stroke.points[i]
-
       ctx.beginPath()
       ctx.moveTo(p1.x, p1.y)
       ctx.lineTo(p2.x, p2.y)
-
       ctx.strokeStyle = stroke.color
-      // Vary width dynamically
-      ctx.lineWidth = stroke.width * p2.p
+      ctx.lineWidth = stroke.width * (p2.p || 0.5)
       ctx.stroke()
     }
     ctx.restore()
@@ -290,24 +302,26 @@ export default function DrawingCanvas({
       ctx.closePath()
       ctx.stroke()
     } else if (shape.type === 'arrow') {
-      // Draw arrow shaft
-      const headlen = 12 // length of head in pixels
+      const headlen = 12
       const dx = width
       const dy = height
       const angle = Math.atan2(dy, dx)
       const toX = x + dx
       const toY = y + dy
-
       ctx.moveTo(x, y)
       ctx.lineTo(toX, toY)
       ctx.stroke()
-
-      // Draw arrow head wings
       ctx.beginPath()
       ctx.moveTo(toX, toY)
-      ctx.lineTo(toX - headlen * Math.cos(angle - Math.PI / 6), toY - headlen * Math.sin(angle - Math.PI / 6))
+      ctx.lineTo(
+        toX - headlen * Math.cos(angle - Math.PI / 6),
+        toY - headlen * Math.sin(angle - Math.PI / 6)
+      )
       ctx.moveTo(toX, toY)
-      ctx.lineTo(toX - headlen * Math.cos(angle + Math.PI / 6), toY - headlen * Math.sin(angle + Math.PI / 6))
+      ctx.lineTo(
+        toX - headlen * Math.cos(angle + Math.PI / 6),
+        toY - headlen * Math.sin(angle + Math.PI / 6)
+      )
       ctx.stroke()
     }
     ctx.restore()
@@ -326,6 +340,7 @@ export default function DrawingCanvas({
     setRedoStack([...redoStack, { strokes: [...strokes], shapes: [...shapes] }])
     setStrokes(prev.strokes)
     setShapes(prev.shapes)
+    syncToStore(prev.strokes, prev.shapes)
   }
 
   const handleRedo = () => {
@@ -335,22 +350,23 @@ export default function DrawingCanvas({
     setUndoStack([...undoStack, { strokes: [...strokes], shapes: [...shapes] }])
     setStrokes(next.strokes)
     setShapes(next.shapes)
+    syncToStore(next.strokes, next.shapes)
   }
 
   const handleClear = () => {
-    const confirmClear = window.confirm('Tem certeza de que deseja apagar todos os desenhos e formas desta nota? Esta ação pode ser desfeita.')
+    const confirmClear = window.confirm(
+      'Tem certeza de que deseja apagar tudo nesta página? Esta ação pode ser desfeita.'
+    )
     if (!confirmClear) return
-
     saveHistoryState()
     setStrokes([])
     setShapes([])
+    syncToStore([], [])
   }
 
   // POINTER EVENT HANDLERS
   const handlePointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
     e.preventDefault()
-
-    // If spacebar is pressed, perform panning/dragging instead of drawing
     if (isSpacePressed) {
       isPanning.current = true
       const viewport = viewportRef.current
@@ -368,16 +384,11 @@ export default function DrawingCanvas({
     const canvas = canvasRef.current
     if (!canvas) return
     const rect = canvas.getBoundingClientRect()
-    const scaleX = rect.width > 0 ? (canvasWidth / rect.width) : 1
-    const scaleY = rect.height > 0 ? (canvasHeight / rect.height) : 1
-    const x = (e.clientX - rect.left) * scaleX
-    const y = (e.clientY - rect.top) * scaleY
+    const x = (e.clientX - rect.left) * (canvasWidth / rect.width)
+    const y = (e.clientY - rect.top) * (canvasHeight / rect.height)
 
-    // Stylus pressure reading (from PointerEvent, defaults to 0.5 if mouse/touch)
     const rawPressure = e.pressure !== undefined && e.pressure > 0 ? e.pressure : 0.5
     const calibratedPressure = pointerHandler.current.calibratePressure(rawPressure)
-
-    // Detect stylus connection
     wacomDetector.current.detectFromEvent(e.nativeEvent)
 
     setIsDrawing(true)
@@ -389,12 +400,11 @@ export default function DrawingCanvas({
       setShapeStart({ x, y })
       setShapeCurrent({ x, y })
     } else if (activeTool === 'eraser') {
-      eraseStrokeAtPoint(x, y)
+      eraseAtPoint(x, y)
     }
   }
 
   const handlePointerMove = (e: React.PointerEvent<HTMLCanvasElement>) => {
-    // If we are currently panning/dragging the viewport
     if (isPanning.current) {
       e.preventDefault()
       const viewport = viewportRef.current
@@ -412,18 +422,8 @@ export default function DrawingCanvas({
     const canvas = canvasRef.current
     if (!canvas) return
     const rect = canvas.getBoundingClientRect()
-    const scaleX = rect.width > 0 ? (canvasWidth / rect.width) : 1
-    const scaleY = rect.height > 0 ? (canvasHeight / rect.height) : 1
-    const x = (e.clientX - rect.left) * scaleX
-    const y = (e.clientY - rect.top) * scaleY
-
-    // Auto-expand canvas size dynamically if drawing near bottom or right boundaries (within 100px)
-    if (x > canvasWidth - 100) {
-      setCanvasWidth((prev) => prev + 1000)
-    }
-    if (y > canvasHeight - 100) {
-      setCanvasHeight((prev) => prev + 1000)
-    }
+    const x = (e.clientX - rect.left) * (canvasWidth / rect.width)
+    const y = (e.clientY - rect.top) * (canvasHeight / rect.height)
 
     const rawPressure = e.pressure !== undefined && e.pressure > 0 ? e.pressure : 0.5
     const calibratedPressure = pointerHandler.current.calibratePressure(rawPressure)
@@ -432,7 +432,6 @@ export default function DrawingCanvas({
       const newStroke = [...currentStroke, { x, y, p: calibratedPressure }]
       setCurrentStroke(newStroke)
 
-      // Draw immediate stroke line to avoid lags
       const ctx = canvas.getContext('2d')
       if (ctx) {
         ctx.save()
@@ -453,27 +452,26 @@ export default function DrawingCanvas({
     } else if (activeTool === 'shape') {
       setShapeCurrent({ x, y })
     } else if (activeTool === 'eraser') {
-      eraseStrokeAtPoint(x, y)
+      eraseAtPoint(x, y)
     }
   }
 
   const handlePointerUp = (e: React.PointerEvent<HTMLCanvasElement>) => {
-    // If we were panning/dragging the viewport
     if (isPanning.current) {
       isPanning.current = false
       return
     }
-
     if (!isDrawing) return
     e.preventDefault()
     setIsDrawing(false)
 
+    let finalStrokes = strokes
+    let finalShapes = shapes
+
     if (activeTool === 'pen' || activeTool === 'highlighter') {
-      // Auto Shape Recognition heuristics if enabled
       if (isAutoShapeEnabled && currentStroke.length > 5) {
         const detection = detectShape(currentStroke)
         if (detection.type !== 'unknown' && detection.confidence > 0.65) {
-          // Add perfect shape instead of rough stroke
           const geom = calculateBoundsFromPoints(currentStroke)
           const newShape: ShapeObj = {
             id: 'shape-' + Math.random().toString(36).substr(2, 5),
@@ -482,13 +480,14 @@ export default function DrawingCanvas({
             width: strokeWidth,
             geom
           }
-          setShapes([...shapes, newShape])
+          finalShapes = [...shapes, newShape]
+          setShapes(finalShapes)
           setCurrentStroke([])
+          syncToStore(finalStrokes, finalShapes)
           return
         }
       }
 
-      // Add regular freehand stroke
       const newStrokeObj: Stroke = {
         id: 'stroke-' + Math.random().toString(36).substr(2, 5),
         tool: activeTool as any,
@@ -497,10 +496,10 @@ export default function DrawingCanvas({
         width: strokeWidth,
         opacity: activeTool === 'highlighter' ? opacity : 1
       }
-      setStrokes([...strokes, newStrokeObj])
+      finalStrokes = [...strokes, newStrokeObj]
+      setStrokes(finalStrokes)
       setCurrentStroke([])
     } else if (activeTool === 'shape' && shapeStart && shapeCurrent) {
-      // Add manual geometric shape
       const newShape: ShapeObj = {
         id: 'shape-' + Math.random().toString(36).substr(2, 5),
         type: selectedShape,
@@ -513,90 +512,82 @@ export default function DrawingCanvas({
           height: shapeCurrent.y - shapeStart.y
         }
       }
-      setShapes([...shapes, newShape])
+      finalShapes = [...shapes, newShape]
+      setShapes(finalShapes)
       setShapeStart(null)
       setShapeCurrent(null)
     }
+
+    syncToStore(finalStrokes, finalShapes)
   }
 
   const calculateBoundsFromPoints = (points: Point[]) => {
-    let minX = Infinity, maxX = -Infinity
-    let minY = Infinity, maxY = -Infinity
+    let minX = Infinity,
+      maxX = -Infinity,
+      minY = Infinity,
+      maxY = -Infinity
     for (const p of points) {
       if (p.x < minX) minX = p.x
       if (p.x > maxX) maxX = p.x
       if (p.y < minY) minY = p.y
       if (p.y > maxY) maxY = p.y
     }
-    return {
-      x: minX,
-      y: minY,
-      width: maxX - minX,
-      height: maxY - minY
-    }
+    return { x: minX, y: minY, width: maxX - minX, height: maxY - minY }
   }
 
-  const eraseStrokeAtPoint = (x: number, y: number) => {
-    // Eraser segment / stroke-based detection
-    // Adjust threshold based on selected eraserMode (pixel vs stroke removal)
+  const eraseAtPoint = (x: number, y: number) => {
     const threshold = eraserMode === 'pixel' ? strokeWidth : strokeWidth * 2
-    let strokeErased = false
+    let changed = false
 
     const newStrokes = strokes.filter((stroke) => {
-      const intersects = stroke.points.some((p) => {
-        const dist = Math.sqrt((p.x - x) ** 2 + (p.y - y) ** 2)
-        return dist < threshold
-      })
-      if (intersects) strokeErased = true
+      const intersects = stroke.points.some(
+        (p) => Math.sqrt((p.x - x) ** 2 + (p.y - y) ** 2) < threshold
+      )
+      if (intersects) changed = true
       return !intersects
     })
 
     const newShapes = shapes.filter((shape) => {
       const { x: sx, y: sy, width: sw, height: sh } = shape.geom
-      // check bounding box
       const minX = Math.min(sx, sx + sw)
       const maxX = Math.max(sx, sx + sw)
       const minY = Math.min(sy, sy + sh)
       const maxY = Math.max(sy, sy + sh)
-
-      const intersects = x >= minX - threshold && x <= maxX + threshold && y >= minY - threshold && y <= maxY + threshold
-      if (intersects) strokeErased = true
+      const intersects =
+        x >= minX - threshold &&
+        x <= maxX + threshold &&
+        y >= minY - threshold &&
+        y <= maxY + threshold
+      if (intersects) changed = true
       return !intersects
     })
 
-    if (strokeErased) {
+    if (changed) {
       setStrokes(newStrokes)
       setShapes(newShapes)
+      syncToStore(newStrokes, newShapes)
     }
   }
 
-  // Dynamic css paper background class
   let paperClass = 'paper-blank'
   if (template === 'ruled') paperClass = 'paper-ruled'
   else if (template === 'grid') paperClass = 'paper-grid'
   else if (template === 'dotted') paperClass = 'paper-dotted'
 
-  // Calculate dynamic background size based on zoom level to ensure patterns scale proportionally
   let dynamicBackgroundSize: string | undefined = undefined
-  if (template === 'ruled') {
-    dynamicBackgroundSize = `100% ${28 * zoom}px`
-  } else if (template === 'grid') {
-    dynamicBackgroundSize = `${24 * zoom}px ${24 * zoom}px`
-  } else if (template === 'dotted') {
-    dynamicBackgroundSize = `${20 * zoom}px ${20 * zoom}px`
-  }
+  if (template === 'ruled') dynamicBackgroundSize = `100% ${28 * zoom}px`
+  else if (template === 'grid') dynamicBackgroundSize = `${24 * zoom}px ${24 * zoom}px`
+  else if (template === 'dotted') dynamicBackgroundSize = `${20 * zoom}px ${20 * zoom}px`
 
   return (
     <div className="relative w-full h-full flex-shrink-0">
-      {/* Scrollable Viewport Container */}
       <div
         ref={viewportRef}
-        className="w-full h-full shadow-inner overflow-auto border border-slate-200/50 dark:border-zinc-800/50 rounded-2xl bg-slate-100 dark:bg-zinc-900/40 flex items-start justify-start p-6"
+        className="w-full h-full shadow-inner overflow-auto border border-slate-200/50 dark:border-zinc-800/50 rounded-2xl bg-slate-100 dark:bg-zinc-900/40 flex items-start justify-center p-8 custom-scrollbar scroll-smooth"
         style={{ touchAction: 'none' }}
       >
-        {/* Sized Wrapper to force natural DOM scrollbars based on zoom level */}
         <div
-          className={`relative shadow-xl border border-slate-200/40 dark:border-zinc-800/40 rounded-xl overflow-hidden flex-shrink-0 bg-white ${paperClass}`}
+          className={`relative shadow-2xl border border-slate-200/40 dark:border-zinc-800/40 rounded-sm overflow-hidden flex-shrink-0 bg-white ${paperClass}`}
           style={{
             width: `${canvasWidth * zoom}px`,
             height: `${canvasHeight * zoom}px`,
@@ -616,8 +607,7 @@ export default function DrawingCanvas({
         </div>
       </div>
 
-      {/* Floating Zoom Control HUD widget at the bottom right corner of the canvas container */}
-      <div className="absolute bottom-4 right-4 flex items-center gap-2 glass-panel p-2 px-3 rounded-full shadow-2xl z-40 text-xs font-semibold text-slate-800 dark:text-slate-200">
+      <div className="absolute bottom-6 right-6 flex items-center gap-2 glass-panel p-2 px-3 rounded-full shadow-2xl z-40 text-xs font-semibold text-slate-800 dark:text-slate-200">
         <button
           onClick={() => setZoom(zoom - 0.1)}
           className="p-1 rounded-full hover:bg-white/20 dark:hover:bg-zinc-700/50 transition-colors text-slate-400 hover:text-slate-700 dark:hover:text-slate-100"
