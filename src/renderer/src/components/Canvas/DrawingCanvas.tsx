@@ -44,8 +44,9 @@ export default function DrawingCanvas({
 }: DrawingCanvasProps): React.JSX.Element {
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const viewportRef = useRef<HTMLDivElement | null>(null)
+  const lastCanvasWheelTime = useRef<number>(0)
 
-  const { notes, updatePageContent } = useNotesStore()
+  const { notes, updatePageContent, setActivePage } = useNotesStore()
 
   // Find current page data from store
   const activeNote = notes.find((n) => n.id === noteId)
@@ -149,7 +150,7 @@ export default function DrawingCanvas({
     }
   }, [noteId, activePageId])
 
-  // Touchpad trackpad pinch-to-zoom handler
+  // Touchpad trackpad pinch-to-zoom and Alt-scroll page flip handler
   useEffect(() => {
     const viewport = viewportRef.current
     if (!viewport) return
@@ -160,6 +161,29 @@ export default function DrawingCanvas({
         const scaleChange = -e.deltaY * 0.006
         const targetZoom = zoom + scaleChange
         setZoom(targetZoom)
+      } else if (e.altKey) {
+        e.preventDefault()
+        const now = Date.now()
+        if (now - lastCanvasWheelTime.current < 350) return // 350ms throttle
+
+        const currentIndex = activeNote?.pages.findIndex((page) => page.id === activePageId) ?? -1
+        if (currentIndex === -1 || !activeNote) return
+
+        if (e.deltaY > 0) {
+          // Scroll down -> go to next page
+          if (currentIndex < activeNote.pages.length - 1) {
+            const nextPage = activeNote.pages[currentIndex + 1]
+            setActivePage(activeNote.id, nextPage.id)
+            lastCanvasWheelTime.current = now
+          }
+        } else if (e.deltaY < 0) {
+          // Scroll up -> go to previous page
+          if (currentIndex > 0) {
+            const prevPage = activeNote.pages[currentIndex - 1]
+            setActivePage(activeNote.id, prevPage.id)
+            lastCanvasWheelTime.current = now
+          }
+        }
       }
     }
 
@@ -167,7 +191,7 @@ export default function DrawingCanvas({
     return () => {
       viewport.removeEventListener('wheel', handleWheel)
     }
-  }, [zoom, setZoom])
+  }, [zoom, setZoom, activeNote, activePageId, setActivePage])
 
   // Configure pressure curve dynamically
   useEffect(() => {

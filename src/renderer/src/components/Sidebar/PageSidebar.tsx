@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useRef, useEffect } from 'react'
 import { useNotesStore, Note } from '../../store/notes-store'
 import { Plus, Trash2, FileText } from 'lucide-react'
 
@@ -9,7 +9,44 @@ interface PageSidebarProps {
 export default function PageSidebar({ activeNote }: PageSidebarProps): React.JSX.Element {
   const { addPage, deletePage, setActivePage } = useNotesStore()
 
+  const lastWheelTime = useRef<number>(0)
+  const activePageRef = useRef<HTMLDivElement | null>(null)
+
+  // Scroll active page thumbnail into view smoothly when activePageId changes
+  useEffect(() => {
+    if (activePageRef.current) {
+      activePageRef.current.scrollIntoView({
+        behavior: 'smooth',
+        block: 'nearest'
+      })
+    }
+  }, [activeNote?.activePageId])
+
   if (!activeNote) return <div className="hidden" />
+
+  const handleWheel = (e: React.WheelEvent<HTMLDivElement>): void => {
+    const now = Date.now()
+    if (now - lastWheelTime.current < 350) return // 350ms throttle
+
+    const currentIndex = activeNote.pages.findIndex((page) => page.id === activeNote.activePageId)
+    if (currentIndex === -1) return
+
+    if (e.deltaY > 0) {
+      // Scroll down -> go to next page
+      if (currentIndex < activeNote.pages.length - 1) {
+        const nextPage = activeNote.pages[currentIndex + 1]
+        setActivePage(activeNote.id, nextPage.id)
+        lastWheelTime.current = now
+      }
+    } else if (e.deltaY < 0) {
+      // Scroll up -> go to previous page
+      if (currentIndex > 0) {
+        const prevPage = activeNote.pages[currentIndex - 1]
+        setActivePage(activeNote.id, prevPage.id)
+        lastWheelTime.current = now
+      }
+    }
+  }
 
   return (
     <div className="flex w-48 flex-shrink-0 h-full bg-slate-50 dark:bg-zinc-900/40 border-l border-slate-200 dark:border-zinc-800/40 flex-col z-10 transition-all duration-300">
@@ -27,10 +64,11 @@ export default function PageSidebar({ activeNote }: PageSidebarProps): React.JSX
         </button>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-2 space-y-2 custom-scrollbar">
+      <div onWheel={handleWheel} className="flex-1 overflow-y-auto p-2 space-y-2 custom-scrollbar">
         {activeNote.pages.map((page, index) => (
           <div
             key={page.id}
+            ref={activeNote.activePageId === page.id ? activePageRef : undefined}
             className={`group relative flex flex-col p-3 rounded-xl border transition-all cursor-pointer ${
               activeNote.activePageId === page.id
                 ? 'bg-white dark:bg-zinc-800 border-red-200 dark:border-red-900/30 shadow-md ring-1 ring-red-500/10'
