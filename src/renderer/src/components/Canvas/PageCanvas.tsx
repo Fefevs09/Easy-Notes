@@ -4,6 +4,7 @@ import { useNotesStore } from '../../store/notes-store'
 import { detectShape } from '../../lib/tools/shape-tools'
 import { PointerHandler } from '../../lib/input/pointer-handler'
 import { WacomDetector } from '../../lib/input/wacom-detector'
+import { simplifyStrokePoints } from '../../lib/tools/stroke-simplifier'
 
 interface Point {
   x: number
@@ -225,20 +226,37 @@ export default function PageCanvas({
   ])
 
   const drawStrokeOnContext = (ctx: CanvasRenderingContext2D, stroke: Stroke) => {
-    if (stroke.points.length < 2) return
+    const points = stroke.points
+    if (points.length < 2) return
     ctx.save()
     ctx.lineCap = 'round'
     ctx.lineJoin = 'round'
     ctx.globalAlpha = stroke.opacity
+    ctx.strokeStyle = stroke.color
 
-    for (let i = 1; i < stroke.points.length; i++) {
-      const p1 = stroke.points[i - 1]
-      const p2 = stroke.points[i]
-      ctx.beginPath()
-      ctx.moveTo(p1.x, p1.y)
-      ctx.lineTo(p2.x, p2.y)
-      ctx.strokeStyle = stroke.color
-      ctx.lineWidth = stroke.width * (p2.p || 0.5)
+    ctx.beginPath()
+    ctx.moveTo(points[0].x, points[0].y)
+
+    if (points.length === 2) {
+      ctx.lineTo(points[1].x, points[1].y)
+      ctx.lineWidth = stroke.width * (points[1].p || 0.5)
+      ctx.stroke()
+    } else {
+      // Quadratic Bezier Midpoint Interpolation
+      for (let i = 1; i < points.length - 1; i++) {
+        const xc = (points[i].x + points[i + 1].x) / 2
+        const yc = (points[i].y + points[i + 1].y) / 2
+
+        ctx.lineWidth = stroke.width * (points[i].p || 0.5)
+        ctx.quadraticCurveTo(points[i].x, points[i].y, xc, yc)
+        ctx.stroke()
+
+        ctx.beginPath()
+        ctx.moveTo(xc, yc)
+      }
+      const lastIdx = points.length - 1
+      ctx.lineWidth = stroke.width * (points[lastIdx].p || 0.5)
+      ctx.lineTo(points[lastIdx].x, points[lastIdx].y)
       ctx.stroke()
     }
     ctx.restore()
@@ -373,10 +391,13 @@ export default function PageCanvas({
     let finalShapes = shapes
 
     if (activeTool === 'pen' || activeTool === 'highlighter') {
-      if (isAutoShapeEnabled && currentStroke.length > 5) {
-        const detection = detectShape(currentStroke)
+      // Simplify points using RDP algorithm for compression
+      const simplifiedPoints = simplifyStrokePoints(currentStroke, 0.8)
+
+      if (isAutoShapeEnabled && simplifiedPoints.length > 5) {
+        const detection = detectShape(simplifiedPoints)
         if (detection.type !== 'unknown' && detection.confidence > 0.65) {
-          const geom = calculateBoundsFromPoints(currentStroke)
+          const geom = calculateBoundsFromPoints(simplifiedPoints)
           const newShape: ShapeObj = {
             id: 'shape-' + Math.random().toString(36).substr(2, 5),
             type: detection.type as any,
@@ -395,7 +416,7 @@ export default function PageCanvas({
       const newStrokeObj: Stroke = {
         id: 'stroke-' + Math.random().toString(36).substr(2, 5),
         tool: activeTool as any,
-        points: currentStroke,
+        points: simplifiedPoints,
         color,
         width: strokeWidth,
         opacity: activeTool === 'highlighter' ? opacity : 1

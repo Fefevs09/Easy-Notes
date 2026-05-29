@@ -89,6 +89,155 @@ app.whenReady().then(() => {
     }
   })
 
+  // Obsidian-style Vault Storage IPC handlers
+  ipcMain.handle('select-vault-directory', async () => {
+    const { dialog } = require('electron')
+    const result = await dialog.showOpenDialog({
+      properties: ['openDirectory', 'createDirectory']
+    })
+    if (result.canceled) return null
+    return result.filePaths[0]
+  })
+
+  ipcMain.handle('scan-vault', async (_, vaultPath) => {
+    try {
+      const fs = require('fs').promises
+      const path = require('path')
+      const items = await fs.readdir(vaultPath, { withFileTypes: true })
+
+      const folders: any[] = []
+      const notes: any[] = []
+
+      for (const item of items) {
+        if (item.isDirectory()) {
+          // Skip hidden folders like .git, .obsidian
+          if (item.name.startsWith('.')) continue
+
+          const folderId = item.name.toLowerCase().replace(/\s+/g, '-')
+          folders.push({
+            id: folderId,
+            name: item.name
+          })
+
+          // Scan subfolder for notes
+          const subPath = path.join(vaultPath, item.name)
+          const subItems = await fs.readdir(subPath, { withFileTypes: true })
+          for (const subItem of subItems) {
+            if (subItem.isFile() && subItem.name.endsWith('.md')) {
+              const filePath = path.join(subPath, subItem.name)
+              const rawContent = await fs.readFile(filePath, 'utf-8')
+              const note = parseMarkdownToNote(rawContent, subItem.name, folderId)
+              if (note) notes.push(note)
+            }
+          }
+        } else if (item.isFile() && item.name.endsWith('.md')) {
+          const filePath = path.join(vaultPath, item.name)
+          const rawContent = await fs.readFile(filePath, 'utf-8')
+          const note = parseMarkdownToNote(rawContent, item.name, 'all') // 'all' represents vault root
+          if (note) notes.push(note)
+        }
+      }
+
+      return { folders, notes }
+    } catch (err) {
+      console.error('Failed to scan vault:', err)
+      return { folders: [], notes: [] }
+    }
+  })
+
+  ipcMain.handle('save-note-file', async (_, vaultPath, folderName, fileName, noteDataJson) => {
+    try {
+      const fs = require('fs').promises
+      const path = require('path')
+      const note = JSON.parse(noteDataJson)
+
+      let targetDir = vaultPath
+      if (folderName && folderName !== 'all') {
+        // Find folder by ID if folderName is a slug, but for directory creation we should check if folderName needs to be resolved.
+        // To be safe, we assume folderName represents the exact subfolder directory name.
+        targetDir = path.join(vaultPath, folderName)
+        await fs.mkdir(targetDir, { recursive: true })
+      }
+
+      const cleanFileName = fileName.endsWith('.md') ? fileName : `${fileName}.md`
+      const filePath = path.join(targetDir, cleanFileName)
+      const markdownContent = serializeNoteToMarkdown(note)
+
+      await fs.writeFile(filePath, markdownContent, 'utf-8')
+      return true
+    } catch (err) {
+      console.error('Failed to save note file:', err)
+      return false
+    }
+  })
+
+  ipcMain.handle('delete-note-file', async (_, vaultPath, folderName, fileName) => {
+    try {
+      const fs = require('fs').promises
+      const path = require('path')
+      const targetDir =
+        folderName && folderName !== 'all' ? path.join(vaultPath, folderName) : vaultPath
+      const cleanFileName = fileName.endsWith('.md') ? fileName : `${fileName}.md`
+      const filePath = path.join(targetDir, cleanFileName)
+      await fs.unlink(filePath)
+      return true
+    } catch (err) {
+      console.error('Failed to delete note file:', err)
+      return false
+    }
+  })
+
+  ipcMain.handle('create-folder-dir', async (_, vaultPath, folderName) => {
+    try {
+      const fs = require('fs').promises
+      const path = require('path')
+      const dirPath = path.join(vaultPath, folderName)
+      await fs.mkdir(dirPath, { recursive: true })
+      return true
+    } catch (err) {
+      console.error('Failed to create folder directory:', err)
+      return false
+    }
+  })
+
+  ipcMain.handle('delete-folder-dir', async (_, vaultPath, folderName) => {
+    try {
+      const fs = require('fs').promises
+      const path = require('path')
+      const dirPath = path.join(vaultPath, folderName)
+      await fs.rm(dirPath, { recursive: true, force: true })
+      return true
+    } catch (err) {
+      console.error('Failed to delete folder directory:', err)
+      return false
+    }
+  })
+
+  ipcMain.handle(
+    'rename-file-or-dir',
+    async (_, vaultPath, folderName, oldName, newName, isFolder) => {
+      try {
+        const fs = require('fs').promises
+        const path = require('path')
+        if (isFolder) {
+          const oldPath = path.join(vaultPath, oldName)
+          const newPath = path.join(vaultPath, newName)
+          await fs.rename(oldPath, newPath)
+        } else {
+          const targetDir =
+            folderName && folderName !== 'all' ? path.join(vaultPath, folderName) : vaultPath
+          const oldPath = path.join(targetDir, oldName.endsWith('.md') ? oldName : `${oldName}.md`)
+          const newPath = path.join(targetDir, newName.endsWith('.md') ? newName : `${newName}.md`)
+          await fs.rename(oldPath, newPath)
+        }
+        return true
+      } catch (err) {
+        console.error('Failed to rename:', err)
+        return false
+      }
+    }
+  )
+
   createWindow()
 
   app.on('activate', function () {
@@ -107,5 +256,182 @@ app.on('window-all-closed', () => {
   }
 })
 
-// In this file you can include the rest of your app's specific main process
-// code. You can also put them in separate files and require them here.
+// Helper functions for parsing and serializing Obsidian-style Markdown notes
+
+function parseMarkdownToNote(rawContent: string, fileName: string, folderId: string): any {
+  const title = fileName.replace(/\.md$/, '')
+  let id = 'note-' + Math.random().toString(36).substr(2, 9)
+  let favorite = false
+  let activePageId = ''
+  let updatedAt = new Date().toISOString()
+  let pages: any[] = []
+
+  // Simple frontmatter parser
+  const frontmatterMatch = rawContent.match(/^---\r?\n([\s\S]*?)\r?\n---/)
+  let body = rawContent
+  if (frontmatterMatch) {
+    body = rawContent.substring(frontmatterMatch[0].length).trim()
+    const fmLines = frontmatterMatch[1].split(/\r?\n/)
+    for (const line of fmLines) {
+      const parts = line.split(':')
+      if (parts.length >= 2) {
+        const key = parts[0].trim()
+        const val = parts.slice(1).join(':').trim()
+        if (key === 'id') id = val
+        else if (key === 'favorite') favorite = val === 'true'
+        else if (key === 'activePageId') activePageId = val
+        else if (key === 'updatedAt') updatedAt = val
+      }
+    }
+  }
+
+  // Find custom drawing code block: ```json {type: "easynotes-drawing"} ... ```
+  const drawingMatch = body.match(
+    /```json\s+\{type:\s*"easynotes-drawing"\}\r?\n([\s\S]*?)\r?\n```/
+  )
+  if (drawingMatch) {
+    try {
+      pages = JSON.parse(drawingMatch[1].trim())
+    } catch (e) {
+      console.error('Failed to parse pages JSON block:', e)
+    }
+    // Remove drawing block from body to get raw text
+    body = body.replace(drawingMatch[0], '').trim()
+  }
+
+  // Set activePageId if empty
+  if (!activePageId && pages.length > 0) {
+    activePageId = pages[0].id
+  }
+
+  // Parse body markdown back to rich text blocks
+  const richBlocks = parseMarkdownToTextBlocks(body)
+  const contentBlocksJson = JSON.stringify(richBlocks)
+
+  return {
+    id,
+    title,
+    pages,
+    activePageId,
+    folderId,
+    favorite,
+    updatedAt,
+    content: contentBlocksJson
+  }
+}
+
+function parseMarkdownToTextBlocks(md: string): any[] {
+  const lines = md.split(/\r?\n\r?\n/)
+  const blocks: any[] = []
+
+  let idx = 0
+  for (const line of lines) {
+    const trimmed = line.trim()
+    if (!trimmed) continue
+    if (trimmed.startsWith('# ')) continue // skip title header
+
+    let type: 'paragraph' | 'bullet' | 'todo' = 'paragraph'
+    let text = trimmed
+    let checked = false
+
+    if (trimmed.startsWith('- [ ] ')) {
+      type = 'todo'
+      text = trimmed.substring(6)
+      checked = false
+    } else if (trimmed.startsWith('- [x] ') || trimmed.startsWith('- [X] ')) {
+      type = 'todo'
+      text = trimmed.substring(6)
+      checked = true
+    } else if (trimmed.startsWith('- ') || trimmed.startsWith('* ')) {
+      type = 'bullet'
+      text = trimmed.substring(2)
+    }
+
+    let bold = false
+    let italic = false
+    let underline = false
+
+    if (text.startsWith('**') && text.endsWith('**')) {
+      bold = true
+      text = text.substring(2, text.length - 2)
+    }
+    if (text.startsWith('*') && text.endsWith('*')) {
+      italic = true
+      text = text.substring(1, text.length - 1)
+    }
+    if (text.startsWith('<u>') && text.endsWith('</u>')) {
+      underline = true
+      text = text.substring(3, text.length - 4)
+    }
+
+    blocks.push({
+      id: `b-${idx++}`,
+      type,
+      text,
+      bold,
+      italic,
+      underline,
+      checked
+    })
+  }
+
+  if (blocks.length === 0) {
+    blocks.push({
+      id: 'b-init',
+      type: 'paragraph',
+      text: '',
+      bold: false,
+      italic: false,
+      underline: false
+    })
+  }
+
+  return blocks
+}
+
+function serializeNoteToMarkdown(note: any): string {
+  const yamlFrontmatter = [
+    '---',
+    `id: ${note.id}`,
+    `favorite: ${note.favorite}`,
+    `activePageId: ${note.activePageId}`,
+    `updatedAt: ${note.updatedAt}`,
+    '---',
+    ''
+  ].join('\n')
+
+  const titleHeader = `# ${note.title}\n\n`
+  const textContent = serializeTextBlocksToMarkdown(note.content)
+
+  const drawingBlock = [
+    '```json {type: "easynotes-drawing"}',
+    JSON.stringify(note.pages || [], null, 2),
+    '```'
+  ].join('\n')
+
+  return yamlFrontmatter + titleHeader + textContent + drawingBlock
+}
+
+function serializeTextBlocksToMarkdown(blocksJson: string): string {
+  try {
+    if (!blocksJson) return '\n'
+    const blocks = JSON.parse(blocksJson)
+    if (!Array.isArray(blocks)) return blocksJson + '\n\n'
+    return (
+      blocks
+        .map((block: any) => {
+          let text = block.text || ''
+          if (block.bold) text = `**${text}**`
+          if (block.italic) text = `*${text}*`
+          if (block.underline) text = `<u>${text}</u>`
+
+          if (block.type === 'bullet') return `- ${text}`
+          if (block.type === 'todo') return `- [${block.checked ? 'x' : ' '}] ${text}`
+          return text
+        })
+        .join('\n\n') + '\n\n'
+    )
+  } catch (e) {
+    return (blocksJson || '') + '\n\n'
+  }
+}

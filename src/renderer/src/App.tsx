@@ -7,10 +7,11 @@ import NotesList from './components/Sidebar/NotesList'
 import MainToolbar from './components/Toolbar/MainToolbar'
 import DrawingCanvas from './components/Canvas/DrawingCanvas'
 import PageSidebar from './components/Sidebar/PageSidebar'
+import VaultOnboarding from './components/Vault/VaultOnboarding'
 import { Sidebar, Sparkles } from 'lucide-react'
 
 export default function App(): React.JSX.Element {
-  const { notes, activeNoteId } = useNotesStore()
+  const { notes, activeNoteId, vaultPath, initializeVault } = useNotesStore()
   const { isSidebarOpen, theme, toggleSidebar } = useUiStore()
 
   const [pageTemplate, setPageTemplate] = useState<string>('ruled')
@@ -21,6 +22,14 @@ export default function App(): React.JSX.Element {
     redo: () => void
     clear: () => void
   } | null>(null)
+
+  // On startup, check localStorage for a saved vault path
+  useEffect(() => {
+    const savedPath = localStorage.getItem('easynotes_vault_path')
+    if (savedPath) {
+      initializeVault(savedPath)
+    }
+  }, [initializeVault])
 
   // Find active note object
   const activeNote = notes.find((n) => n.id === activeNoteId)
@@ -43,6 +52,10 @@ export default function App(): React.JSX.Element {
       useCanvasStore.getState().setActiveTool('pen')
     }
   }, [activeNoteId])
+
+  if (!vaultPath) {
+    return <VaultOnboarding />
+  }
 
   return (
     <div className="flex w-screen h-screen overflow-hidden bg-slate-50 dark:bg-zinc-950 transition-colors duration-300">
