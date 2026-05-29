@@ -5,7 +5,6 @@ import {
   Note
 } from '../../../src/renderer/src/lib/storage/note-serializer'
 
-
 describe('Note Serializer / Parser (Obsidian-Style)', () => {
   it('should serialize a Note object into correct Markdown structure', () => {
     const note: Note = {
@@ -148,5 +147,50 @@ updatedAt: 2026-05-29T12:00:00.000Z
 
     expect(blocks[2].underline).toBe(true)
     expect(blocks[2].text).toBe('Texto Sublinhado')
+  })
+
+  it('should serialize and parse notes containing page references to portable Vault PDF paths', () => {
+    const note: Note = {
+      id: 'pdf-note-test',
+      title: 'Slides da Aula',
+      activePageId: 'page-pdf-1',
+      folderId: 'all',
+      favorite: false,
+      updatedAt: '2026-05-29T12:00:00.000Z',
+      pages: [
+        {
+          id: 'page-pdf-1',
+          strokes: [],
+          shapes: [],
+          pdfPath: 'attachments/aula-1.pdf',
+          pageNumber: 1
+        },
+        {
+          id: 'page-pdf-2',
+          strokes: [],
+          shapes: [],
+          pdfPath: 'attachments/aula-1.pdf',
+          pageNumber: 2
+        }
+      ],
+      content: JSON.stringify([])
+    }
+
+    const serialized = serializeNoteToMarkdown(note)
+
+    // Verify it contains the PDF path reference inside the drawing JSON code block
+    expect(serialized).toContain('attachments/aula-1.pdf')
+    expect(serialized).toContain('"pageNumber": 1')
+    expect(serialized).toContain('"pageNumber": 2')
+
+    // Parse it back
+    const parsed = parseMarkdownToNote(serialized, 'Slides da Aula.md', 'all')
+
+    expect(parsed.id).toBe('pdf-note-test')
+    expect(parsed.pages.length).toBe(2)
+    expect(parsed.pages[0].pdfPath).toBe('attachments/aula-1.pdf')
+    expect(parsed.pages[0].pageNumber).toBe(1)
+    expect(parsed.pages[1].pdfPath).toBe('attachments/aula-1.pdf')
+    expect(parsed.pages[1].pageNumber).toBe(2)
   })
 })

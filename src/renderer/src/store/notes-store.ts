@@ -4,6 +4,8 @@ export interface NotePage {
   id: string
   strokes: any[]
   shapes: any[]
+  pdfPath?: string
+  pageNumber?: number
 }
 
 export interface Note {
@@ -33,6 +35,7 @@ interface NotesState {
   initializeVault: (path: string) => Promise<void>
   addFolder: (name: string) => void
   addNote: (title: string, folderId: string) => void
+  addPdfNote: (title: string, relativePath: string, pageCount: number, folderId: string) => void
   updateNote: (id: string, updates: Partial<Note>) => void
   deleteNote: (id: string) => void
   toggleFavorite: (id: string) => void
@@ -194,6 +197,46 @@ export const useNotesStore = create<NotesState>((set) => ({
             underline: false
           }
         ]) // Initial content text block
+      }
+
+      saveNoteToDisk(state.vaultPath, newNote, state.folders)
+
+      return {
+        notes: [newNote, ...state.notes],
+        activeNoteId: newNote.id
+      }
+    }),
+  addPdfNote: (title, relativePath, pageCount, folderId) =>
+    set((state) => {
+      const pdfPages: NotePage[] = []
+      for (let i = 1; i <= pageCount; i++) {
+        pdfPages.push({
+          id: 'page-' + Math.random().toString(36).substr(2, 9),
+          strokes: [],
+          shapes: [],
+          pdfPath: relativePath,
+          pageNumber: i
+        })
+      }
+
+      const newNote: Note = {
+        id: 'note-' + Math.random().toString(36).substr(2, 9),
+        title,
+        pages: pdfPages,
+        activePageId: pdfPages[0]?.id || '',
+        folderId,
+        favorite: false,
+        updatedAt: new Date().toISOString(),
+        content: JSON.stringify([
+          {
+            id: 'b-init',
+            type: 'paragraph',
+            text: `PDF Importado: ${title}`,
+            bold: true,
+            italic: false,
+            underline: false
+          }
+        ])
       }
 
       saveNoteToDisk(state.vaultPath, newNote, state.folders)

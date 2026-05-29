@@ -2,6 +2,8 @@ export interface NotePage {
   id: string
   strokes: any[]
   shapes: any[]
+  pdfPath?: string
+  pageNumber?: number
 }
 
 export interface Note {

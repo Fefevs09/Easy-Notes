@@ -1,7 +1,19 @@
 import React from 'react'
 import { useNotesStore } from '../../store/notes-store'
 import { useUiStore } from '../../store/ui-store'
-import { Search, Plus, Star, Calendar } from 'lucide-react'
+import { Search, Plus, Star, Calendar, FileText } from 'lucide-react'
+import * as pdfjsLib from 'pdfjs-dist'
+
+// Set PDF.js worker source with robust fallback (local URL constructor + CDN fallback)
+if (typeof window !== 'undefined') {
+  try {
+    const localWorker = new URL('pdfjs-dist/build/pdf.worker.min.js', import.meta.url).toString()
+    pdfjsLib.GlobalWorkerOptions.workerSrc = localWorker
+  } catch (e) {
+    console.warn('Failed to load local PDF.js worker, falling back to CDN:', e)
+    pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`
+  }
+}
 
 export default function NotesList(): React.JSX.Element {
   const {
@@ -11,6 +23,7 @@ export default function NotesList(): React.JSX.Element {
     setActiveNoteId,
     setSearchQuery,
     addNote,
+    addPdfNote,
     toggleFavorite
   } = useNotesStore()
   const { activeFolderId } = useUiStore()
@@ -36,6 +49,44 @@ export default function NotesList(): React.JSX.Element {
   const handleAddNote = () => {
     const folder = activeFolderId === 'favorites' ? 'all' : activeFolderId
     addNote('Nova Nota', folder)
+  }
+
+  const handleImportPdf = async () => {
+    if (typeof window === 'undefined' || !(window as any).electron) return
+    const vaultPath = useNotesStore.getState().vaultPath
+    if (!vaultPath) return
+
+    try {
+      const result = await (window as any).electron.ipcRenderer.invoke(
+        'import-pdf-to-vault',
+        vaultPath
+      )
+      if (!result) return
+
+      const { relativePath, title } = result
+      const folder = activeFolderId === 'favorites' ? 'all' : activeFolderId
+
+      // Load PDF to count pages
+      const arrayBuffer = await (window as any).electron.ipcRenderer.invoke(
+        'read-pdf-file',
+        vaultPath,
+        relativePath
+      )
+      if (!arrayBuffer) {
+        alert('Erro ao ler o arquivo PDF importado.')
+        return
+      }
+
+      const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer })
+      const pdf = await loadingTask.promise
+      const pageCount = pdf.numPages
+
+      // Add PDF note to the store
+      addPdfNote(title, relativePath, pageCount, folder)
+    } catch (err) {
+      console.error('Failed to import PDF:', err)
+      alert('Falha ao processar o arquivo PDF.')
+    }
   }
 
   // Format date helper
@@ -70,13 +121,23 @@ export default function NotesList(): React.JSX.Element {
           />
         </div>
 
-        <button
-          onClick={handleAddNote}
-          className="flex items-center justify-center gap-2 w-full py-2 bg-red-400 hover:bg-red-500 text-white font-medium rounded-lg shadow-sm hover:shadow transition-all hover-scale"
-        >
-          <Plus size={16} />
-          <span>Criar Nota</span>
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={handleAddNote}
+            className="flex-1 flex items-center justify-center gap-1.5 py-2 bg-red-400 hover:bg-red-500 text-white text-xs font-semibold rounded-lg shadow-sm hover:shadow transition-all hover-scale cursor-pointer"
+          >
+            <Plus size={14} />
+            <span>Criar Nota</span>
+          </button>
+
+          <button
+            onClick={handleImportPdf}
+            className="flex-1 flex items-center justify-center gap-1.5 py-2 bg-slate-50 hover:bg-slate-100 dark:bg-zinc-800/60 dark:hover:bg-zinc-800 text-slate-700 dark:text-slate-200 text-xs font-semibold rounded-lg shadow-sm hover:shadow transition-all hover-scale border border-slate-200/50 dark:border-zinc-700/50 cursor-pointer"
+          >
+            <FileText size={14} className="text-red-400" />
+            <span>PDF</span>
+          </button>
+        </div>
       </div>
 
       {/* Note Cards List */}

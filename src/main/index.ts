@@ -238,6 +238,70 @@ app.whenReady().then(() => {
     }
   )
 
+  ipcMain.handle('import-pdf-to-vault', async (_, vaultPath) => {
+    try {
+      const { dialog, BrowserWindow } = require('electron')
+      const fs = require('fs').promises
+      const path = require('path')
+
+      const focusedWindow = BrowserWindow.getFocusedWindow()
+      const result = await dialog.showOpenDialog(focusedWindow || undefined, {
+        properties: ['openFile'],
+        filters: [{ name: 'PDF Files', extensions: ['pdf'] }]
+      })
+
+      if (result.canceled || result.filePaths.length === 0) {
+        return null
+      }
+
+      const filePath = result.filePaths[0]
+      const attachmentsDir = path.join(vaultPath, 'attachments')
+      await fs.mkdir(attachmentsDir, { recursive: true })
+
+      const originalName = path.basename(filePath)
+      const cleanName = originalName.replace(/[\\/:*?"<>|]/g, '')
+      let targetPath = path.join(attachmentsDir, cleanName)
+
+      const fileExists = async (p: string) => {
+        try {
+          await fs.access(p)
+          return true
+        } catch {
+          return false
+        }
+      }
+
+      if (await fileExists(targetPath)) {
+        const ext = path.extname(cleanName)
+        const nameWithoutExt = path.basename(cleanName, ext)
+        targetPath = path.join(attachmentsDir, `${nameWithoutExt}-${Date.now()}${ext}`)
+      }
+
+      await fs.copyFile(filePath, targetPath)
+
+      return {
+        relativePath: path.relative(vaultPath, targetPath),
+        title: path.basename(targetPath, path.extname(targetPath))
+      }
+    } catch (err) {
+      console.error('Failed to import PDF file:', err)
+      return null
+    }
+  })
+
+  ipcMain.handle('read-pdf-file', async (_, vaultPath, relativePath) => {
+    try {
+      const fs = require('fs').promises
+      const path = require('path')
+      const absolutePath = path.join(vaultPath, relativePath)
+      const buffer = await fs.readFile(absolutePath)
+      return buffer
+    } catch (err) {
+      console.error('Failed to read PDF file:', err)
+      return null
+    }
+  })
+
   createWindow()
 
   app.on('activate', function () {

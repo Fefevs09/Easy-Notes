@@ -5,6 +5,46 @@ import { detectShape } from '../../lib/tools/shape-tools'
 import { PointerHandler } from '../../lib/input/pointer-handler'
 import { WacomDetector } from '../../lib/input/wacom-detector'
 import { simplifyStrokePoints } from '../../lib/tools/stroke-simplifier'
+import * as pdfjsLib from 'pdfjs-dist'
+
+// Set PDF.js worker source with robust fallback (local URL constructor + CDN fallback)
+if (typeof window !== 'undefined') {
+  try {
+    const localWorker = new URL('pdfjs-dist/build/pdf.worker.min.js', import.meta.url).toString()
+    pdfjsLib.GlobalWorkerOptions.workerSrc = localWorker
+  } catch (e) {
+    console.warn('Failed to load local PDF.js worker, falling back to CDN:', e)
+    pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`
+  }
+}
+
+const pdfPromiseCache: Record<string, Promise<any> | undefined> = {}
+
+async function getCachedPdf(vaultPath: string, pdfPath: string): Promise<any> {
+  const cacheKey = `${vaultPath}::${pdfPath}`
+  if (pdfPromiseCache[cacheKey] !== undefined) {
+    return pdfPromiseCache[cacheKey]
+  }
+
+  pdfPromiseCache[cacheKey] = (async () => {
+    if (typeof window === 'undefined' || !(window as any).electron) {
+      throw new Error('Not running inside Electron')
+    }
+    const arrayBuffer = await (window as any).electron.ipcRenderer.invoke(
+      'read-pdf-file',
+      vaultPath,
+      pdfPath
+    )
+    if (!arrayBuffer) {
+      throw new Error(`Failed to load PDF: ${pdfPath}`)
+    }
+
+    const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer })
+    return await loadingTask.promise
+  })()
+
+  return pdfPromiseCache[cacheKey]
+}
 
 interface Point {
   x: number
@@ -35,6 +75,8 @@ interface PageCanvasProps {
     id: string
     strokes: Stroke[]
     shapes: ShapeObj[]
+    pdfPath?: string
+    pageNumber?: number
   }
   template: string
   zoom: number
@@ -58,6 +100,7 @@ export default function PageCanvas({
   onRegisterHandlers
 }: PageCanvasProps): React.JSX.Element {
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
+  const pdfCanvasRef = useRef<HTMLCanvasElement | null>(null)
 
   const { updatePageContent } = useNotesStore()
 
@@ -69,6 +112,9 @@ export default function PageCanvas({
   const [currentStroke, setCurrentStroke] = useState<Point[]>([])
   const [shapeStart, setShapeStart] = useState<{ x: number; y: number } | null>(null)
   const [shapeCurrent, setShapeCurrent] = useState<{ x: number; y: number } | null>(null)
+  const [pdfPageAspectRatio, setPdfPageAspectRatio] = useState<number | null>(null)
+
+  const logicalHeight = pdfPageAspectRatio ? canvasWidth / pdfPageAspectRatio : canvasHeight
 
   const {
     activeTool,
@@ -84,6 +130,61 @@ export default function PageCanvas({
   // Input handlers
   const pointerHandler = useRef(new PointerHandler())
   const wacomDetector = useRef(new WacomDetector())
+
+  // Render PDF background if pdfPath is provided
+  useEffect(() => {
+    const pdfPath = page.pdfPath
+    const pageNumber = page.pageNumber
+    const vaultPath = useNotesStore.getState().vaultPath
+    const canvasElement = pdfCanvasRef.current
+
+    if (!pdfPath || !pageNumber || !vaultPath || !canvasElement) {
+      setPdfPageAspectRatio(null)
+      return
+    }
+
+    let active = true
+
+    const renderPdf = async () => {
+      try {
+        const pdf = await getCachedPdf(vaultPath, pdfPath)
+        if (!active) return
+
+        const pdfPage = await pdf.getPage(pageNumber)
+        if (!active) return
+
+        const targetCanvas = pdfCanvasRef.current
+        if (!targetCanvas) return
+        const ctx = targetCanvas.getContext('2d')
+        if (!ctx) return
+
+        const unscaledViewport = pdfPage.getViewport({ scale: 1.0 })
+        const aspect = unscaledViewport.width / unscaledViewport.height
+        setPdfPageAspectRatio(aspect)
+
+        const targetWidth = canvasWidth * zoom
+        const scale = targetWidth / unscaledViewport.width
+        const viewport = pdfPage.getViewport({ scale })
+
+        targetCanvas.width = viewport.width
+        targetCanvas.height = viewport.height
+
+        ctx.clearRect(0, 0, targetCanvas.width, targetCanvas.height)
+        await pdfPage.render({
+          canvasContext: ctx,
+          viewport: viewport
+        }).promise
+      } catch (err) {
+        console.error('Error rendering PDF background page:', err)
+      }
+    }
+
+    renderPdf()
+
+    return () => {
+      active = false
+    }
+  }, [page.pdfPath, page.pageNumber, zoom, canvasWidth])
 
   // Sync with Store when page data changes (e.g. initial load or external undo/redo updates)
   useEffect(() => {
@@ -216,7 +317,7 @@ export default function PageCanvas({
     shapeCurrent,
     template,
     canvasWidth,
-    canvasHeight,
+    logicalHeight,
     zoom,
     activeTool,
     color,
@@ -323,7 +424,7 @@ export default function PageCanvas({
     if (!canvas) return
     const rect = canvas.getBoundingClientRect()
     const x = (e.clientX - rect.left) * (canvasWidth / rect.width)
-    const y = (e.clientY - rect.top) * (canvasHeight / rect.height)
+    const y = (e.clientY - rect.top) * (logicalHeight / rect.height)
 
     const rawPressure = e.pressure !== undefined && e.pressure > 0 ? e.pressure : 0.5
     const calibratedPressure = pointerHandler.current.calibratePressure(rawPressure)
@@ -349,7 +450,7 @@ export default function PageCanvas({
     if (!canvas) return
     const rect = canvas.getBoundingClientRect()
     const x = (e.clientX - rect.left) * (canvasWidth / rect.width)
-    const y = (e.clientY - rect.top) * (canvasHeight / rect.height)
+    const y = (e.clientY - rect.top) * (logicalHeight / rect.height)
 
     const rawPressure = e.pressure !== undefined && e.pressure > 0 ? e.pressure : 0.5
     const calibratedPressure = pointerHandler.current.calibratePressure(rawPressure)
@@ -509,19 +610,25 @@ export default function PageCanvas({
       className={`relative shadow-2xl border border-slate-200/40 dark:border-zinc-800/40 rounded-sm overflow-hidden flex-shrink-0 bg-white ${paperClass}`}
       style={{
         width: `${canvasWidth * zoom}px`,
-        height: `${canvasHeight * zoom}px`,
+        height: `${logicalHeight * zoom}px`,
         backgroundSize: dynamicBackgroundSize,
         transition: 'background-size 0.15s ease-out'
       }}
     >
+      {page.pdfPath && (
+        <canvas
+          ref={pdfCanvasRef}
+          className="absolute top-0 left-0 w-full h-full pointer-events-none block z-10"
+        />
+      )}
       <canvas
         ref={canvasRef}
         width={canvasWidth * zoom}
-        height={canvasHeight * zoom}
+        height={logicalHeight * zoom}
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
-        className={`absolute top-0 left-0 w-full h-full block ${isSpacePressed ? 'cursor-grab active:cursor-grabbing z-40' : 'cursor-crosshair'}`}
+        className={`absolute top-0 left-0 w-full h-full block z-20 ${isSpacePressed ? 'cursor-grab active:cursor-grabbing z-40' : 'cursor-crosshair'}`}
       />
     </div>
   )
