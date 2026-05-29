@@ -1,7 +1,7 @@
-import React from 'react'
+import React, { useState, useEffect } from 'react'
 import { useNotesStore } from '../../store/notes-store'
 import { useUiStore } from '../../store/ui-store'
-import { Search, Plus, Star, Calendar, FileText } from 'lucide-react'
+import { Search, Plus, Star, Calendar, FileText, Trash2 } from 'lucide-react'
 import * as pdfjsLib from 'pdfjs-dist'
 
 // Set PDF.js worker source with robust fallback (local URL constructor + CDN fallback)
@@ -24,9 +24,75 @@ export default function NotesList(): React.JSX.Element {
     setSearchQuery,
     addNote,
     addPdfNote,
-    toggleFavorite
+    toggleFavorite,
+    deleteNote
   } = useNotesStore()
   const { activeFolderId } = useUiStore()
+
+  const [contextMenu, setContextMenu] = useState<{
+    x: number
+    y: number
+    noteId: string
+  } | null>(null)
+
+  const [noteToDelete, setNoteToDelete] = useState<string | null>(null)
+
+  // Close context menu on global click/contextmenu
+  useEffect(() => {
+    const handleGlobalClick = () => setContextMenu(null)
+    window.addEventListener('click', handleGlobalClick)
+    window.addEventListener('contextmenu', handleGlobalClick)
+    return () => {
+      window.removeEventListener('click', handleGlobalClick)
+      window.removeEventListener('contextmenu', handleGlobalClick)
+    }
+  }, [])
+
+  // Listen to Escape and Enter keys when confirm modal is active
+  useEffect(() => {
+    if (!noteToDelete) return
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.preventDefault()
+        setNoteToDelete(null)
+      } else if (e.key === 'Enter') {
+        e.preventDefault()
+        handleConfirmDelete()
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [noteToDelete])
+
+  const handleConfirmDelete = () => {
+    if (!noteToDelete) return
+    deleteNote(noteToDelete)
+    setNoteToDelete(null)
+  }
+
+  const handleContextMenu = (e: React.MouseEvent, noteId: string) => {
+    e.preventDefault()
+    e.stopPropagation()
+
+    const menuWidth = 160
+    const menuHeight = 50
+
+    let x = e.clientX
+    let y = e.clientY
+
+    if (x + menuWidth > window.innerWidth) {
+      x = window.innerWidth - menuWidth - 10
+    }
+    if (y + menuHeight > window.innerHeight) {
+      y = window.innerHeight - menuHeight - 10
+    }
+
+    setContextMenu({ x, y, noteId })
+  }
 
   // Filter notes based on active folder & search query
   const filteredNotes = notes.filter((note) => {
@@ -152,6 +218,7 @@ export default function NotesList(): React.JSX.Element {
               <div
                 key={note.id}
                 onClick={() => setActiveNoteId(note.id)}
+                onContextMenu={(e) => handleContextMenu(e, note.id)}
                 className={`relative group p-4 rounded-xl cursor-pointer border transition-all hover-scale ${
                   isActive
                     ? 'bg-red-50/60 dark:bg-red-950/20 border-red-200 dark:border-red-900/40 shadow-sm'
@@ -193,6 +260,57 @@ export default function NotesList(): React.JSX.Element {
           })
         )}
       </div>
+
+      {/* Floating Context Menu */}
+      {contextMenu && (
+        <div
+          style={{ top: contextMenu.y, left: contextMenu.x }}
+          className="fixed z-50 min-w-[160px] py-1 bg-white/90 dark:bg-zinc-950/90 backdrop-blur-md border border-slate-200/60 dark:border-zinc-800/60 rounded-xl shadow-xl animate-in fade-in zoom-in-95 duration-100 ease-out"
+        >
+          <button
+            onClick={(e) => {
+              e.stopPropagation()
+              setNoteToDelete(contextMenu.noteId)
+              setContextMenu(null)
+            }}
+            className="w-full text-left px-3.5 py-2 text-xs text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors flex items-center gap-2 cursor-pointer font-medium"
+          >
+            <Trash2 size={14} />
+            <span>Excluir Nota</span>
+          </button>
+        </div>
+      )}
+
+      {/* Custom Confirmation Modal */}
+      {noteToDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4 animate-in fade-in duration-150">
+          <div className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-2xl p-6 max-w-sm w-full shadow-2xl animate-in zoom-in-95 duration-200">
+            <h3 className="text-base font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+              <Trash2 size={18} className="text-red-500" />
+              <span>Excluir Nota</span>
+            </h3>
+            <p className="text-xs text-slate-400 dark:text-slate-400 mt-2 leading-relaxed">
+              Tem certeza que deseja excluir esta nota? Esta ação não pode ser desfeita e removerá o
+              arquivo correspondente permanentemente.
+            </p>
+
+            <div className="flex justify-end gap-2 mt-6">
+              <button
+                onClick={() => setNoteToDelete(null)}
+                className="px-4 py-2 text-xs font-semibold text-slate-600 dark:text-slate-300 bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700/80 rounded-lg cursor-pointer transition-colors"
+              >
+                Cancelar <span className="text-[10px] opacity-60 ml-1 font-mono">(esc)</span>
+              </button>
+              <button
+                onClick={handleConfirmDelete}
+                className="px-4 py-2 text-xs font-semibold text-white bg-red-500 hover:bg-red-600 rounded-lg cursor-pointer shadow-md hover:shadow-lg hover:scale-102 active:scale-98 transition-all duration-150"
+              >
+                Confirmar <span className="text-[10px] opacity-75 ml-1 font-mono">⏎</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
