@@ -8,11 +8,11 @@ import MainToolbar from './components/Toolbar/MainToolbar'
 import DrawingCanvas from './components/Canvas/DrawingCanvas'
 import PageSidebar from './components/Sidebar/PageSidebar'
 import VaultOnboarding from './components/Vault/VaultOnboarding'
-import { Sidebar, Sparkles } from 'lucide-react'
+import { Sidebar, Sparkles, FileText } from 'lucide-react'
 
 export default function App(): React.JSX.Element {
   const { notes, activeNoteId, vaultPath, initializeVault } = useNotesStore()
-  const { isSidebarOpen, theme, toggleSidebar } = useUiStore()
+  const { isSidebarOpen, isNotesListOpen, theme, toggleSidebar, toggleNotesList } = useUiStore()
 
   const [pageTemplate, setPageTemplate] = useState<string>('ruled')
 
@@ -68,19 +68,35 @@ export default function App(): React.JSX.Element {
         </div>
       )}
 
-      {/* Toggle Sidebar Button */}
-      <button
-        onClick={toggleSidebar}
-        className="absolute bottom-5 left-5 p-2.5 rounded-full glass-panel shadow-md hover:scale-110 transition-all text-slate-400 hover:text-slate-700 dark:hover:text-slate-100 z-30"
-        title="Ocultar Painel"
-      >
-        <Sidebar size={16} />
-      </button>
+      {/* Control Sidebars Floating Buttons */}
+      <div className="absolute bottom-5 left-5 flex gap-2 z-30">
+        <button
+          onClick={toggleSidebar}
+          className={`p-2.5 rounded-full glass-panel shadow-md hover:scale-110 transition-all text-slate-400 hover:text-slate-700 dark:hover:text-slate-100 ${
+            isSidebarOpen ? 'bg-slate-200/50 dark:bg-zinc-800/50 text-slate-700 dark:text-slate-100' : ''
+          }`}
+          title={isSidebarOpen ? 'Ocultar Pastas' : 'Mostrar Pastas'}
+        >
+          <Sidebar size={16} />
+        </button>
+
+        <button
+          onClick={toggleNotesList}
+          className={`p-2.5 rounded-full glass-panel shadow-md hover:scale-110 transition-all text-slate-400 hover:text-slate-700 dark:hover:text-slate-100 ${
+            isNotesListOpen ? 'bg-slate-200/50 dark:bg-zinc-800/50 text-slate-700 dark:text-slate-100' : ''
+          }`}
+          title={isNotesListOpen ? 'Ocultar Notas' : 'Mostrar Notas'}
+        >
+          <FileText size={16} />
+        </button>
+      </div>
 
       {/* 2. MIDDLE COLUMN: Notes list sidebar */}
-      <div className="w-72 h-full flex-shrink-0 z-10">
-        <NotesList />
-      </div>
+      {isNotesListOpen && (
+        <div className="w-72 h-full flex-shrink-0 z-10 border-r border-slate-200 dark:border-zinc-800/40">
+          <NotesList />
+        </div>
+      )}
 
       {/* 3. RIGHT COLUMN: Main active workspace area */}
       <div className="flex-1 h-full flex flex-col relative overflow-hidden bg-slate-50 dark:bg-zinc-950">
