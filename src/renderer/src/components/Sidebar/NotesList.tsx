@@ -48,6 +48,12 @@ export default function NotesList(): React.JSX.Element {
     }
   }, [])
 
+  const handleConfirmDelete = () => {
+    if (!noteToDelete) return
+    deleteNote(noteToDelete)
+    setNoteToDelete(null)
+  }
+
   // Listen to Escape and Enter keys when confirm modal is active
   useEffect(() => {
     if (!noteToDelete) return
@@ -67,12 +73,6 @@ export default function NotesList(): React.JSX.Element {
       window.removeEventListener('keydown', handleKeyDown)
     }
   }, [noteToDelete])
-
-  const handleConfirmDelete = () => {
-    if (!noteToDelete) return
-    deleteNote(noteToDelete)
-    setNoteToDelete(null)
-  }
 
   const handleContextMenu = (e: React.MouseEvent, noteId: string) => {
     e.preventDefault()
