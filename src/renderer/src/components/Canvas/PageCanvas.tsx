@@ -130,6 +130,7 @@ export default function PageCanvas({
   // Input handlers
   const pointerHandler = useRef(new PointerHandler())
   const wacomDetector = useRef(new WacomDetector())
+  const isBarrelButtonActive = useRef(false)
 
   // Render PDF background if pdfPath is provided
   useEffect(() => {
@@ -433,12 +434,17 @@ export default function PageCanvas({
     setIsDrawing(true)
     saveHistoryState()
 
-    if (activeTool === 'pen' || activeTool === 'highlighter') {
+    const isWacomBarrelButton = e.pointerType === 'pen' && (e.button === 2 || e.buttons === 2)
+    isBarrelButtonActive.current = isWacomBarrelButton
+
+    const currentActiveTool = isWacomBarrelButton ? 'eraser' : activeTool
+
+    if (currentActiveTool === 'pen' || currentActiveTool === 'highlighter') {
       setCurrentStroke([{ x, y, p: calibratedPressure }])
-    } else if (activeTool === 'shape') {
+    } else if (currentActiveTool === 'shape') {
       setShapeStart({ x, y })
       setShapeCurrent({ x, y })
-    } else if (activeTool === 'eraser') {
+    } else if (currentActiveTool === 'eraser') {
       eraseAtPoint(x, y)
     }
   }
@@ -455,7 +461,9 @@ export default function PageCanvas({
     const rawPressure = e.pressure !== undefined && e.pressure > 0 ? e.pressure : 0.5
     const calibratedPressure = pointerHandler.current.calibratePressure(rawPressure)
 
-    if (activeTool === 'pen' || activeTool === 'highlighter') {
+    const currentActiveTool = isBarrelButtonActive.current ? 'eraser' : activeTool
+
+    if (currentActiveTool === 'pen' || currentActiveTool === 'highlighter') {
       const newStroke = [...currentStroke, { x, y, p: calibratedPressure }]
       setCurrentStroke(newStroke)
 
@@ -465,7 +473,7 @@ export default function PageCanvas({
         ctx.scale(zoom, zoom)
         ctx.lineCap = 'round'
         ctx.lineJoin = 'round'
-        ctx.globalAlpha = activeTool === 'highlighter' ? opacity : 1
+        ctx.globalAlpha = currentActiveTool === 'highlighter' ? opacity : 1
         ctx.beginPath()
         const p1 = newStroke[newStroke.length - 2]
         const p2 = newStroke[newStroke.length - 1]
@@ -476,9 +484,9 @@ export default function PageCanvas({
         ctx.stroke()
         ctx.restore()
       }
-    } else if (activeTool === 'shape') {
+    } else if (currentActiveTool === 'shape') {
       setShapeCurrent({ x, y })
-    } else if (activeTool === 'eraser') {
+    } else if (currentActiveTool === 'eraser') {
       eraseAtPoint(x, y)
     }
   }
@@ -491,7 +499,9 @@ export default function PageCanvas({
     let finalStrokes = strokes
     let finalShapes = shapes
 
-    if (activeTool === 'pen' || activeTool === 'highlighter') {
+    const currentActiveTool = isBarrelButtonActive.current ? 'eraser' : activeTool
+
+    if (currentActiveTool === 'pen' || currentActiveTool === 'highlighter') {
       // Simplify points using RDP algorithm for compression
       const simplifiedPoints = simplifyStrokePoints(currentStroke, 0.8)
 
@@ -510,22 +520,23 @@ export default function PageCanvas({
           setShapes(finalShapes)
           setCurrentStroke([])
           syncToStore(finalStrokes, finalShapes)
+          isBarrelButtonActive.current = false
           return
         }
       }
 
       const newStrokeObj: Stroke = {
         id: 'stroke-' + Math.random().toString(36).substr(2, 5),
-        tool: activeTool as any,
+        tool: currentActiveTool as any,
         points: simplifiedPoints,
         color,
         width: strokeWidth,
-        opacity: activeTool === 'highlighter' ? opacity : 1
+        opacity: currentActiveTool === 'highlighter' ? opacity : 1
       }
       finalStrokes = [...strokes, newStrokeObj]
       setStrokes(finalStrokes)
       setCurrentStroke([])
-    } else if (activeTool === 'shape' && shapeStart && shapeCurrent) {
+    } else if (currentActiveTool === 'shape' && shapeStart && shapeCurrent) {
       const newShape: ShapeObj = {
         id: 'shape-' + Math.random().toString(36).substr(2, 5),
         type: selectedShape as any,
@@ -545,6 +556,7 @@ export default function PageCanvas({
     }
 
     syncToStore(finalStrokes, finalShapes)
+    isBarrelButtonActive.current = false
   }
 
   const calculateBoundsFromPoints = (points: Point[]) => {
@@ -628,6 +640,7 @@ export default function PageCanvas({
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
+        onContextMenu={(e) => e.preventDefault()}
         className={`absolute top-0 left-0 w-full h-full block z-20 ${isSpacePressed ? 'cursor-grab active:cursor-grabbing z-40' : 'cursor-crosshair'}`}
       />
     </div>
